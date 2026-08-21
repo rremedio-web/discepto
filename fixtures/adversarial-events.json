@@ -1,0 +1,108 @@
+[
+  {
+    "type": "diagnosis",
+    "diagnosis": {
+      "agent_id": "agent-alpha",
+      "read_only": true,
+      "findings": ["seq-cell wraps mid-sequence at fixed viewport width"]
+    }
+  },
+  {
+    "type": "diagnosis",
+    "diagnosis": {
+      "agent_id": "agent-beta",
+      "read_only": true,
+      "findings": ["overflow present before padding adjustment"]
+    }
+  },
+  {
+    "type": "dispute",
+    "dispute": {
+      "agent_id": "agent-alpha",
+      "claim": "padding increase alone resolves overflow",
+      "estimate": "single-line within 320px after +8px horizontal padding"
+    }
+  },
+  {
+    "type": "dispute",
+    "dispute": {
+      "agent_id": "agent-beta",
+      "claim": "wrap rule change required",
+      "estimate": "keep-all nowrap needed; padding insufficient"
+    }
+  },
+  {
+    "type": "measurement",
+    "measurement": {
+      "method": "viewport-overflow-line-count",
+      "observations": [
+        { "key": "viewport_width_px", "value": "320" },
+        { "key": "seq_line_count_before", "value": "2" },
+        { "key": "document_overflow_before_px", "value": "12" },
+        { "key": "seq_line_count_after", "value": "1" },
+        { "key": "document_overflow_after_px", "value": "0" }
+      ],
+      "result": "after-variant single-line zero-overflow"
+    }
+  },
+  {
+    "type": "lease",
+    "lease": {
+      "issuer_id": "agent-alpha",
+      "writer_id": "agent-alpha",
+      "scope": ["playwright/fixture.html"],
+      "active": true
+    }
+  },
+  {
+    "type": "lease",
+    "lease": {
+      "issuer_id": "coordinator-neutral",
+      "writer_id": "agent-alpha",
+      "scope": ["playwright/fixture.html"],
+      "active": true
+    }
+  },
+  {
+    "type": "mutation",
+    "mutation": {
+      "agent_id": "agent-beta",
+      "path": "playwright/fixture.html"
+    }
+  },
+  {
+    "type": "mutation",
+    "mutation": {
+      "agent_id": "agent-alpha",
+      "path": "playwright/fixture.html"
+    }
+  },
+  {
+    "type": "freeze",
+    "freeze": {
+      "id": "freeze-001",
+      "base_id": "base-neutral-001",
+      "candidate_id": "candidate-neutral-001"
+    }
+  },
+  {
+    "type": "review",
+    "review": {
+      "reviewer_id": "agent-alpha",
+      "freeze_id": "freeze-001",
+      "freeze_binding": "aa3df7692a184ea3a0e99234b1e963f29fd44e9a289e4e0522de65c9de5f743c",
+      "verdict": "PASS",
+      "findings": []
+    }
+  },
+  {
+    "type": "review",
+    "review": {
+      "reviewer_id": "agent-beta",
+      "freeze_id": "freeze-001",
+      "freeze_binding": "aa3df7692a184ea3a0e99234b1e963f29fd44e9a289e4e0522de65c9de5f743c",
+      "verdict": "PASS",
+      "findings": []
+    }
+  }
+]

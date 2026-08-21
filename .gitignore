@@ -1,0 +1,14 @@
+node_modules/
+.DS_Store
+*.log
+coverage/
+dist/
+build/
+.cache/
+.env
+.env.*
+*.zip
+release-out/
+__MACOSX/
+test-results/
+playwright-report/

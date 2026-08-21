@@ -1,0 +1,107 @@
+{
+  "train-r01-external": {
+    "classification": "EXTERNAL_ACTION",
+    "disposition": "ESCALATE",
+    "owner_decision": "yes"
+  },
+  "train-r01-near": {
+    "classification": "UNKNOWN",
+    "disposition": "OBSERVE",
+    "owner_decision": "no"
+  },
+  "train-r02-idle": {
+    "classification": "IDLE",
+    "disposition": "OBSERVE",
+    "owner_decision": "no"
+  },
+  "train-r02-near": {
+    "classification": "UNKNOWN",
+    "disposition": "OBSERVE",
+    "owner_decision": "no"
+  },
+  "train-r03-auth-mismatch": {
+    "classification": "RECORDS_TRUST",
+    "disposition": "HOLD",
+    "owner_decision": "yes"
+  },
+  "train-r03-near": {
+    "classification": "UNKNOWN",
+    "disposition": "OBSERVE",
+    "owner_decision": "no"
+  },
+  "train-r04-steps-gap": {
+    "classification": "RECORDS_TRUST",
+    "disposition": "STEER",
+    "owner_decision": "no"
+  },
+  "train-r04-near": {
+    "classification": "UNKNOWN",
+    "disposition": "OBSERVE",
+    "owner_decision": "no"
+  },
+  "train-r05-contradictory": {
+    "classification": "RECORDS_TRUST",
+    "disposition": "STEER",
+    "owner_decision": "no"
+  },
+  "train-r05-near": {
+    "classification": "UNKNOWN",
+    "disposition": "OBSERVE",
+    "owner_decision": "no"
+  },
+  "train-r06-unstable": {
+    "classification": "FAILED_CHECK",
+    "disposition": "STEER",
+    "owner_decision": "no"
+  },
+  "train-r06-near": {
+    "classification": "UNKNOWN",
+    "disposition": "OBSERVE",
+    "owner_decision": "no"
+  },
+  "train-r07-empty-parity": {
+    "classification": "TOOLING",
+    "disposition": "HOLD",
+    "owner_decision": "no"
+  },
+  "train-r07-near": {
+    "classification": "UNKNOWN",
+    "disposition": "OBSERVE",
+    "owner_decision": "no"
+  },
+  "train-r08-mutated": {
+    "classification": "TOOLING",
+    "disposition": "STEER",
+    "owner_decision": "no"
+  },
+  "train-r08-near": {
+    "classification": "UNKNOWN",
+    "disposition": "OBSERVE",
+    "owner_decision": "no"
+  },
+  "train-r09-ref-mismatch": {
+    "classification": "UNKNOWN",
+    "disposition": "VERIFY",
+    "owner_decision": "no"
+  },
+  "train-r09-ref-unverified": {
+    "classification": "UNKNOWN",
+    "disposition": "VERIFY",
+    "owner_decision": "no"
+  },
+  "train-r09-blind-absence": {
+    "classification": "UNKNOWN",
+    "disposition": "VERIFY",
+    "owner_decision": "no"
+  },
+  "train-r09-near": {
+    "classification": "UNKNOWN",
+    "disposition": "OBSERVE",
+    "owner_decision": "no"
+  },
+  "train-r10-default": {
+    "classification": "UNKNOWN",
+    "disposition": "OBSERVE",
+    "owner_decision": "no"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "discepto-worktree-experiment",
+  "version": "0.4.0",
+  "description": "Provider-neutral synthetic two-agent single-worktree experiment and replay kit",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "validate": "node src/validate.mjs",
+    "demo": "node src/demo.mjs",
+    "replay": "node src/replay.mjs",
+    "demo:adversarial": "node src/adversarial-demo.mjs",
+    "validate:watcher": "node calibration/watcher/validate.mjs",
+    "demo:watcher": "node calibration/watcher/demo.mjs",
+    "demo:watcher:adversarial": "node src/watcher-adversarial-demo.mjs"
+  },
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@playwright/test": "1.62.1"
+  }
+}

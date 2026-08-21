@@ -1,0 +1,590 @@
+[
+  {
+    "id": "train-r01-external",
+    "claim": "external action claim",
+    "evidence": [
+      {
+        "ref": "ev-train-r01-external",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "external",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 4,
+      "receipted_steps": 4,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "train-r01-near",
+    "claim": "write instead of external",
+    "evidence": [
+      {
+        "ref": "ev-train-r01-near",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "write",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 4,
+      "receipted_steps": 4,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "train-r02-idle",
+    "claim": "idle activity claim",
+    "evidence": [
+      {
+        "ref": "ev-train-r02-idle",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "idle",
+      "authority_status": "match",
+      "claimed_steps": 4,
+      "receipted_steps": 4,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "train-r02-near",
+    "claim": "active not idle",
+    "evidence": [
+      {
+        "ref": "ev-train-r02-near",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 4,
+      "receipted_steps": 4,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "train-r03-auth-mismatch",
+    "claim": "authority mismatch claim",
+    "evidence": [
+      {
+        "ref": "ev-train-r03-auth-mismatch",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "mismatch",
+      "claimed_steps": 4,
+      "receipted_steps": 4,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "train-r03-near",
+    "claim": "authority match claim",
+    "evidence": [
+      {
+        "ref": "ev-train-r03-near",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 4,
+      "receipted_steps": 4,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "train-r04-steps-gap",
+    "claim": "claimed exceeds receipted",
+    "evidence": [
+      {
+        "ref": "ev-train-r04-steps-gap",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 6,
+      "receipted_steps": 2,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "train-r04-near",
+    "claim": "receipted exceeds claimed",
+    "evidence": [
+      {
+        "ref": "ev-train-r04-near",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 2,
+      "receipted_steps": 6,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "train-r05-contradictory",
+    "claim": "contradictory evidence claim",
+    "evidence": [
+      {
+        "ref": "ev-train-r05-contradictory",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 4,
+      "receipted_steps": 4,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "contradictory",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "train-r05-near",
+    "claim": "consistent evidence claim",
+    "evidence": [
+      {
+        "ref": "ev-train-r05-near",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 4,
+      "receipted_steps": 4,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "train-r06-unstable",
+    "claim": "unstable check claim",
+    "evidence": [
+      {
+        "ref": "ev-train-r06-unstable",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 4,
+      "receipted_steps": 4,
+      "check_stability": "unstable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "train-r06-near",
+    "claim": "stable check claim",
+    "evidence": [
+      {
+        "ref": "ev-train-r06-near",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 4,
+      "receipted_steps": 4,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "train-r07-empty-parity",
+    "claim": "empty output with parity",
+    "evidence": [
+      {
+        "ref": "ev-train-r07-empty-parity",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 4,
+      "receipted_steps": 4,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "empty",
+      "parity_claimed": true,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "train-r07-near",
+    "claim": "empty output no parity",
+    "evidence": [
+      {
+        "ref": "ev-train-r07-near",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 4,
+      "receipted_steps": 4,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "empty",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "train-r08-mutated",
+    "claim": "mutated identifier claim",
+    "evidence": [
+      {
+        "ref": "ev-train-r08-mutated",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 4,
+      "receipted_steps": 4,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "mutated",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "train-r08-near",
+    "claim": "stable identifier claim",
+    "evidence": [
+      {
+        "ref": "ev-train-r08-near",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 4,
+      "receipted_steps": 4,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "train-r09-ref-mismatch",
+    "claim": "reference mismatch claim",
+    "evidence": [
+      {
+        "ref": "ev-train-r09-ref-mismatch",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 4,
+      "receipted_steps": 4,
+      "check_stability": "stable",
+      "reference_status": "mismatch",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "train-r09-ref-unverified",
+    "claim": "reference unverified claim",
+    "evidence": [
+      {
+        "ref": "ev-train-r09-ref-unverified",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 4,
+      "receipted_steps": 4,
+      "check_stability": "stable",
+      "reference_status": "unverified",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "train-r09-blind-absence",
+    "claim": "blind vantage absence",
+    "evidence": [
+      {
+        "ref": "ev-train-r09-blind-absence",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 4,
+      "receipted_steps": 4,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "blind",
+      "absence_claimed": true
+    }
+  },
+  {
+    "id": "train-r09-near",
+    "claim": "blind vantage no absence",
+    "evidence": [
+      {
+        "ref": "ev-train-r09-near",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 4,
+      "receipted_steps": 4,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "blind",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "train-r10-default",
+    "claim": "default neutral claim",
+    "evidence": [
+      {
+        "ref": "ev-train-r10-default",
+        "kind": "observation",
+        "summary": "display-only summary"
+      }
+    ],
+    "scope": "session-a",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 4,
+      "receipted_steps": 4,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  }
+]

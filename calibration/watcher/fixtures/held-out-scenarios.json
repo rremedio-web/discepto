@@ -1,0 +1,455 @@
+[
+  {
+    "id": "held-p01-ext-idle",
+    "claim": "held batch requests external callback while session is idle",
+    "evidence": [
+      {
+        "ref": "ev-held-p01-audit",
+        "kind": "audit-log",
+        "summary": "callback ticket opened during idle window"
+      }
+    ],
+    "scope": "batch-7b",
+    "status": "pending",
+    "facts": {
+      "requested_action": "external",
+      "activity": "idle",
+      "authority_status": "match",
+      "claimed_steps": 7,
+      "receipted_steps": 7,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "held-p02-idle-auth",
+    "claim": "idle operator with mismatched authority token",
+    "evidence": [
+      {
+        "ref": "ev-held-p02-trace",
+        "kind": "trace",
+        "summary": "authority header disagrees with roster"
+      }
+    ],
+    "scope": "session-c",
+    "status": "closed",
+    "facts": {
+      "requested_action": "read",
+      "activity": "idle",
+      "authority_status": "mismatch",
+      "claimed_steps": 3,
+      "receipted_steps": 3,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "held-p03-auth-gap",
+    "claim": "authority mismatch with inflated step ledger",
+    "evidence": [
+      {
+        "ref": "ev-held-p03-ledger",
+        "kind": "ledger",
+        "summary": "nine claimed steps against one receipt"
+      }
+    ],
+    "scope": "batch-7b",
+    "status": "open",
+    "facts": {
+      "requested_action": "write",
+      "activity": "active",
+      "authority_status": "mismatch",
+      "claimed_steps": 9,
+      "receipted_steps": 1,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "held-p04-contra-unstable",
+    "claim": "contradictory witness set with unstable verification",
+    "evidence": [
+      {
+        "ref": "ev-held-p04-witness",
+        "kind": "witness",
+        "summary": "two incompatible witness statements"
+      },
+      {
+        "ref": "ev-held-p04-check",
+        "kind": "check",
+        "summary": "verification flips between runs"
+      }
+    ],
+    "scope": "session-b",
+    "status": "pending",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 5,
+      "receipted_steps": 5,
+      "check_stability": "unstable",
+      "reference_status": "match",
+      "evidence_consistency": "contradictory",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "held-p05-unstable-parity",
+    "claim": "unstable check on empty output claiming parity",
+    "evidence": [
+      {
+        "ref": "ev-held-p05-parity",
+        "kind": "parity",
+        "summary": "parity asserted on blank buffer"
+      }
+    ],
+    "scope": "session-c",
+    "status": "open",
+    "facts": {
+      "requested_action": "read",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 6,
+      "receipted_steps": 6,
+      "check_stability": "unstable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "empty",
+      "parity_claimed": true,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "held-p06-parity-mutated",
+    "claim": "empty parity claim with mutated identifier",
+    "evidence": [
+      {
+        "ref": "ev-held-p06-id",
+        "kind": "identifier",
+        "summary": "handle changed mid-run"
+      }
+    ],
+    "scope": "batch-7b",
+    "status": "closed",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 2,
+      "receipted_steps": 2,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "empty",
+      "parity_claimed": true,
+      "identifier_status": "mutated",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "held-p07-mutated-ref",
+    "claim": "mutated identifier with mismatched reference",
+    "evidence": [
+      {
+        "ref": "ev-held-p07-ref",
+        "kind": "reference",
+        "summary": "cited artifact hash differs from catalog"
+      }
+    ],
+    "scope": "session-b",
+    "status": "pending",
+    "facts": {
+      "requested_action": "write",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 8,
+      "receipted_steps": 8,
+      "check_stability": "stable",
+      "reference_status": "mismatch",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "mutated",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "held-r04-gap-standalone",
+    "claim": "step ledger gap without authority conflict",
+    "evidence": [
+      {
+        "ref": "ev-held-r04-gap",
+        "kind": "ledger",
+        "summary": "eight claimed against one receipted step"
+      }
+    ],
+    "scope": "session-c",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 8,
+      "receipted_steps": 1,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "held-r09-ref-mismatch",
+    "claim": "reference hash mismatch on cited artifact",
+    "evidence": [
+      {
+        "ref": "ev-held-r09-mismatch",
+        "kind": "catalog",
+        "summary": "catalog entry disagrees with citation"
+      }
+    ],
+    "scope": "batch-7b",
+    "status": "closed",
+    "facts": {
+      "requested_action": "read",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 3,
+      "receipted_steps": 3,
+      "check_stability": "stable",
+      "reference_status": "mismatch",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "held-r09-ref-unverified",
+    "claim": "reference cannot be verified against catalog",
+    "evidence": [
+      {
+        "ref": "ev-held-r09-unverified",
+        "kind": "catalog",
+        "summary": "catalog lookup returned no match"
+      }
+    ],
+    "scope": "session-b",
+    "status": "pending",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 7,
+      "receipted_steps": 7,
+      "check_stability": "stable",
+      "reference_status": "unverified",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "held-r09-blind-absence",
+    "claim": "blind vantage with claimed absence",
+    "evidence": [
+      {
+        "ref": "ev-held-r09-blind",
+        "kind": "vantage",
+        "summary": "observer lacked direct line of sight"
+      }
+    ],
+    "scope": "session-c",
+    "status": "open",
+    "facts": {
+      "requested_action": "read",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 5,
+      "receipted_steps": 5,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "blind",
+      "absence_claimed": true
+    }
+  },
+  {
+    "id": "held-r10-default",
+    "claim": "neutral held-out baseline with no triggering facts",
+    "evidence": [
+      {
+        "ref": "ev-held-r10-baseline",
+        "kind": "baseline",
+        "summary": "routine observation with no anomalies"
+      }
+    ],
+    "scope": "session-b",
+    "status": "closed",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 6,
+      "receipted_steps": 6,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "held-n01-write-near",
+    "claim": "write request near-miss for external precedence",
+    "evidence": [
+      {
+        "ref": "ev-held-n01-write",
+        "kind": "intent",
+        "summary": "write intent without external escalation"
+      }
+    ],
+    "scope": "batch-7b",
+    "status": "open",
+    "facts": {
+      "requested_action": "write",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 2,
+      "receipted_steps": 2,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "held-n02-active-near",
+    "claim": "active session near-miss for idle precedence",
+    "evidence": [
+      {
+        "ref": "ev-held-n02-active",
+        "kind": "activity",
+        "summary": "session shows ongoing activity"
+      }
+    ],
+    "scope": "session-c",
+    "status": "pending",
+    "facts": {
+      "requested_action": "read",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 9,
+      "receipted_steps": 9,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "held-n03-auth-match-near",
+    "claim": "authority match near-miss for mismatch precedence",
+    "evidence": [
+      {
+        "ref": "ev-held-n03-auth",
+        "kind": "authority",
+        "summary": "roster and token agree"
+      }
+    ],
+    "scope": "session-b",
+    "status": "open",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 1,
+      "receipted_steps": 1,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  },
+  {
+    "id": "held-n04-receipted-near",
+    "claim": "receipted exceeds claimed near-miss for gap rule",
+    "evidence": [
+      {
+        "ref": "ev-held-n04-receipt",
+        "kind": "ledger",
+        "summary": "more receipts than claims on ledger"
+      }
+    ],
+    "scope": "batch-7b",
+    "status": "closed",
+    "facts": {
+      "requested_action": "none",
+      "activity": "active",
+      "authority_status": "match",
+      "claimed_steps": 1,
+      "receipted_steps": 7,
+      "check_stability": "stable",
+      "reference_status": "match",
+      "evidence_consistency": "consistent",
+      "output_status": "present",
+      "parity_claimed": false,
+      "identifier_status": "stable",
+      "vantage": "direct",
+      "absence_claimed": false
+    }
+  }
+]

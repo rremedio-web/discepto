@@ -1,0 +1,34 @@
+# Limitations
+
+Discepto is a **synthetic protocol and replay reference only**.
+
+## Not demonstrated
+
+- Real-world multi-agent effectiveness
+- Production safety or correctness guarantees
+- Live worktree isolation under concurrent agents
+- Model-agnostic behavior with actual LLM providers
+- Automatic dispute resolution beyond the included measurement fixture
+- Authentication of actor labels or coordinator identity
+
+## Synthetic scope
+
+- Events are pre-authored; replay does not invoke agents
+- HTML fixture demonstrates one neutral before/after measurement pattern
+- Trace binding covers protocol version, run/coordinator/freeze IDs, recorded mutation paths, and the canonical measurement digest — not filesystem bytes
+- Actor labels remain unauthenticated; replay checks declared labels against run metadata but does not prove who sent an event
+- Playwright checks run at a single fixed viewport width
+- Adversarial receipt validates fixture conformance offline; it is not a live attack harness
+- Watcher calibration and the Discepto-to-watcher adapter are deterministic synthetic policy/reference gates; they are not learned classification, blinded independent validation, production oversight, or evidence of real-world efficacy
+
+## Operational bounds
+
+- One correction maximum per run trace in the neutral fixture
+- Writer lease scope is explicit; scope changes only through lease events whose declared `issuer_id` matches `run.coordinator_id`; narrowing is enforced and widening rejected (scope monotonicity)
+- Freeze IDs must be unique within a run
+- Mutations follow a strict schema; unknown fields are rejected
+- Fatal errors stop replay; nonfatal rejections are recorded and replay continues
+- Release tooling validates structure, file types, UTF-8 integrity, and example-domain emails — not semantic correctness
+- CI pins action SHAs and Node 22; local environments may differ slightly in Playwright engine builds
+
+Use this repository for vocabulary, fixture calibration, and offline authority testing — not as deployed oversight infrastructure.

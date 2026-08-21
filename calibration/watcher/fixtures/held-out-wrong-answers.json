@@ -1,0 +1,82 @@
+{
+  "held-p01-ext-idle": {
+    "classification": "IDLE",
+    "disposition": "OBSERVE",
+    "owner_decision": "no"
+  },
+  "held-p02-idle-auth": {
+    "classification": "RECORDS_TRUST",
+    "disposition": "HOLD",
+    "owner_decision": "yes"
+  },
+  "held-p03-auth-gap": {
+    "classification": "RECORDS_TRUST",
+    "disposition": "STEER",
+    "owner_decision": "no"
+  },
+  "held-p04-contra-unstable": {
+    "classification": "FAILED_CHECK",
+    "disposition": "STEER",
+    "owner_decision": "no"
+  },
+  "held-p05-unstable-parity": {
+    "classification": "TOOLING",
+    "disposition": "HOLD",
+    "owner_decision": "no"
+  },
+  "held-p06-parity-mutated": {
+    "classification": "TOOLING",
+    "disposition": "STEER",
+    "owner_decision": "no"
+  },
+  "held-p07-mutated-ref": {
+    "classification": "UNKNOWN",
+    "disposition": "VERIFY",
+    "owner_decision": "no"
+  },
+  "held-r04-gap-standalone": {
+    "classification": "UNKNOWN",
+    "disposition": "OBSERVE",
+    "owner_decision": "no"
+  },
+  "held-r09-ref-mismatch": {
+    "classification": "RECORDS_TRUST",
+    "disposition": "HOLD",
+    "owner_decision": "yes"
+  },
+  "held-r09-ref-unverified": {
+    "classification": "UNKNOWN",
+    "disposition": "OBSERVE",
+    "owner_decision": "no"
+  },
+  "held-r09-blind-absence": {
+    "classification": "UNKNOWN",
+    "disposition": "OBSERVE",
+    "owner_decision": "no"
+  },
+  "held-r10-default": {
+    "classification": "EXTERNAL_ACTION",
+    "disposition": "ESCALATE",
+    "owner_decision": "yes"
+  },
+  "held-n01-write-near": {
+    "classification": "EXTERNAL_ACTION",
+    "disposition": "ESCALATE",
+    "owner_decision": "yes"
+  },
+  "held-n02-active-near": {
+    "classification": "IDLE",
+    "disposition": "OBSERVE",
+    "owner_decision": "no"
+  },
+  "held-n03-auth-match-near": {
+    "classification": "RECORDS_TRUST",
+    "disposition": "HOLD",
+    "owner_decision": "yes"
+  },
+  "held-n04-receipted-near": {
+    "classification": "RECORDS_TRUST",
+    "disposition": "STEER",
+    "owner_decision": "no"
+  }
+}
