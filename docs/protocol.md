@@ -1,6 +1,10 @@
 # Protocol
 
-Discepto defines a fixed-phase, two-agent protocol for a single isolated worktree (protocol version `discepto-protocol-2`).
+Discepto defines a fixed-phase, two-agent protocol for a single isolated worktree (protocol version `discepto-protocol-3`).
+
+## Compatibility
+
+Protocol v3 makes the previously asserted review independence boundary explicit: run agents and review records must carry `seat_id`, and v3 rejects traces that omit those fields. Protocol v2 traces therefore require migration by assigning unique writer/challenger seats and recording the challenger seat on every review before they can be replayed as v3. `Measurement.artifact_identity` remains optional, so measurements without that field retain compatibility within v3.
 
 ## Roles
 
@@ -44,7 +48,7 @@ Unknown fields and invalid enums are rejected.
 ## Authority rules
 
 - Exactly two unique agents; one writer, one challenger; `coordinator_id` distinct from agent ids
-- Agent seat IDs are required and unique; a review seat matching the writer seat is rejected
+- Agent seat IDs are required and unique; a review seat must match the registered challenger seat and must not match the writer seat
 - Replay treats a lease as coordinator-issued when its declared `issuer_id` equals `run.coordinator_id`; the first lease must be active and name the predesignated writer; mismatched `issuer_id` is rejected (nonfatal)
 - Subsequent leases with matching `issuer_id` may narrow scope or revoke/reactivate equal scope; widening is rejected (nonfatal) — scope monotonicity
 - Mutation before or without active lease: rejected (nonfatal)
@@ -54,7 +58,7 @@ Unknown fields and invalid enums are rejected.
 - Review must reference current freeze; stale reviews rejected (nonfatal)
 - Review `freeze_binding` must match the current freeze binding digest
 - Declared `reviewer_id` must equal the challenger's id; writer-label mismatch on review is rejected (nonfatal)
-- Declared review `seat_id` is required; a seat matching the writer seat is rejected (nonfatal)
+- Declared review `seat_id` is required; it must match the registered challenger seat and a seat matching the writer seat is rejected (nonfatal)
 - `CHANGES_NEEDED` → one correction max → new freeze required with unique freeze ID
 - Second correction: fail closed (fatal)
 
@@ -86,6 +90,6 @@ The neutral scenario uses `fixtures/events.json`. The adversarial trace (`fixtur
 
 ## Watcher adapter boundary
 
-`src/watcher-adapter.mjs` consumes structured Discepto rejections `{ code, operation, message }` but maps scenarios using `code` and `operation` only. It supports the thirteen stable authority rejection codes emitted by `src/protocol.mjs`, validates code/operation pairs fail-closed, and classifies adapted scenarios through the isolated watcher classifier. This is a deterministic synthetic policy/reference gate — not learned classification, blinded independent validation, production oversight, or real-world efficacy.
+`src/watcher-adapter.mjs` consumes structured Discepto rejections `{ code, operation, message }` but maps scenarios using `code` and `operation` only. It supports the fourteen stable authority rejection codes emitted by `src/protocol.mjs`, validates code/operation pairs fail-closed, and classifies adapted scenarios through the isolated watcher classifier. This is a deterministic synthetic policy/reference gate — not learned classification, blinded independent validation, production oversight, or real-world efficacy.
 
 `npm run demo:watcher:adversarial` adapts the four adversarial trace rejections and emits a deterministic watcher receipt with `watcher_calibration_version`, source protocol version/fixture/receipt hash, `observation_count`, observations (`rejection_code`, `operation`, `scenario_id`, `evidence_ref`, `classification`, `disposition`, `owner_decision`), and `receipt_hash`. Rejection messages are omitted from the watcher receipt body.

@@ -14,6 +14,7 @@ export const REJECTION_CODE_OPERATIONS = Object.freeze({
   MUTATION_OUTSIDE_SCOPE: 'mutation',
   REVIEW_REVIEWER_MISMATCH: 'review',
   REVIEW_SAME_SEAT: 'review',
+  REVIEW_SEAT_MISMATCH: 'review',
   REVIEW_NO_CURRENT_FREEZE: 'review',
   REVIEW_BINDING_MISMATCH: 'review',
   REVIEW_FREEZE_MISMATCH: 'review',

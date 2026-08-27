@@ -26,6 +26,7 @@ const ALL_REJECTION_PAIRS = [
   ['MUTATION_OUTSIDE_SCOPE', 'mutation'],
   ['REVIEW_REVIEWER_MISMATCH', 'review'],
   ['REVIEW_SAME_SEAT', 'review'],
+  ['REVIEW_SEAT_MISMATCH', 'review'],
   ['REVIEW_NO_CURRENT_FREEZE', 'review'],
   ['REVIEW_BINDING_MISMATCH', 'review'],
   ['REVIEW_FREEZE_MISMATCH', 'review'],
@@ -44,9 +45,9 @@ function rejection(code, operation, message = 'display-only prose must not matte
 }
 
 describe('watcher adapter', () => {
-  it('all 13 code/operation pairs adapt and classify exactly', async () => {
+  it('all 14 code/operation pairs adapt and classify exactly', async () => {
     const { REJECTION_CODE_OPERATIONS, adaptAndClassify } = await import('../src/watcher-adapter.mjs');
-    assert.equal(Object.keys(REJECTION_CODE_OPERATIONS).length, 13);
+    assert.equal(Object.keys(REJECTION_CODE_OPERATIONS).length, 14);
     for (const [code, operation] of ALL_REJECTION_PAIRS) {
       const result = adaptAndClassify(rejection(code, operation), CONTEXT);
       assert.equal(result.scenario.facts.authority_status, 'mismatch');

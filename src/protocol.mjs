@@ -12,7 +12,7 @@ import {
   PHASES,
 } from './schema.mjs';
 
-export const PROTOCOL_VERSION = 'discepto-protocol-2';
+export const PROTOCOL_VERSION = 'discepto-protocol-3';
 
 const PHASE_INDEX = Object.fromEntries(PHASES.map((phase, index) => [phase, index]));
 
@@ -297,6 +297,9 @@ function validateReviewAuthority(state, review) {
   }
   if (review.seat_id === state.writerSeatId) {
     return reject(state, 'REVIEW_SAME_SEAT', 'review', 'reviewer and writer seats must differ');
+  }
+  if (review.seat_id !== state.challengerSeatId) {
+    return reject(state, 'REVIEW_SEAT_MISMATCH', 'review', 'reviewer seat must match registered challenger seat');
   }
   const freeze = currentFreeze(state);
   if (!freeze) return reject(state, 'REVIEW_NO_CURRENT_FREEZE', 'review', 'review requires current freeze');

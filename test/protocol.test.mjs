@@ -123,6 +123,26 @@ describe('protocol authority and phase invariants', () => {
       message: 'reviewer and writer seats must differ',
     });
   });
+
+  it('rejects review when the declared reviewer seat is not the challenger seat', () => {
+    const state = createInitialState(baseRun);
+    oneFreeze(state);
+    const ok = applyReview(state, {
+      reviewer_id: 'challenger-1',
+      seat_id: 'bogus-seat',
+      freeze_id: 'freeze-a',
+      freeze_binding: currentBinding(state),
+      verdict: 'PASS',
+      findings: [],
+    });
+    assert.equal(ok, false);
+    assert.equal(state.phase, 'REVIEW');
+    assert.deepEqual(state.rejections.at(-1), {
+      code: 'REVIEW_SEAT_MISMATCH',
+      operation: 'review',
+      message: 'reviewer seat must match registered challenger seat',
+    });
+  });
   it('advances DIAGNOSE to DISPUTE after both read-only diagnoses', () => {
     const state = createInitialState(baseRun);
     bothDiagnoses(state);
@@ -809,8 +829,8 @@ describe('reproduced attack rejection', () => {
     assert.equal(state.errors.length, 0);
   });
 
-  it('exports protocol version constant discepto-protocol-2', () => {
-    assert.equal(PROTOCOL_VERSION, 'discepto-protocol-2');
+  it('exports protocol version constant discepto-protocol-3', () => {
+    assert.equal(PROTOCOL_VERSION, 'discepto-protocol-3');
   });
 });
 

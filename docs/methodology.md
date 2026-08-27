@@ -11,7 +11,7 @@ Discepto is a synthetic reference experiment, not a live orchestrator.
 5. **Cross-engine checks** — Playwright captures structured measurements (line count, overflow px) in Chromium, Firefox, and WebKit at 320px width
 6. **Replay validation** — deterministic stdout JSON compared across runs; adversarial demo compared byte-identically across two invocations
 7. **Watcher calibration** — isolated classifier scored against train/held-out fixtures via `npm run validate:watcher`; synthetic policy gate only
-8. **Watcher adversarial receipt** — adapts the three adversarial rejections through `src/watcher-adapter.mjs` and emits deterministic JSON via `npm run demo:watcher:adversarial`; not blinded independent validation or production oversight
+8. **Watcher adversarial receipt** — adapts the four adversarial rejections through `src/watcher-adapter.mjs` and emits deterministic JSON via `npm run demo:watcher:adversarial`; not blinded independent validation or production oversight
 
 ## Dispute resolution
 
@@ -27,7 +27,7 @@ When review returns `CHANGES_NEEDED`, exactly one correction is permitted. The w
 
 ## Challenger review
 
-Reviews require a declared `reviewer_id` equal to the challenger's id, a `seat_id` that does not match the writer seat, the current `freeze_id`, and the matching `freeze_binding` digest. Stale freeze IDs, binding mismatches, writer-label review mismatch, or same-seat review are nonfatal rejections. Seat labels are still declarations rather than authentication.
+Reviews require a declared `reviewer_id` equal to the challenger's id, a `seat_id` equal to the registered challenger seat and different from the writer seat, the current `freeze_id`, and the matching `freeze_binding` digest. Stale freeze IDs, binding mismatches, writer-label review mismatch, unregistered reviewer seats, or same-seat review are nonfatal rejections. Seat labels are still declarations rather than authentication.
 
 ## Artifact identity
 
