@@ -10,13 +10,15 @@ Discepto is a **synthetic protocol and replay reference only**.
 - Model-agnostic behavior with actual LLM providers
 - Automatic dispute resolution beyond the included measurement fixture
 - Authentication of actor labels or coordinator identity
+- Multi-run or cross-run current-state aggregation
 
 ## Synthetic scope
 
 - Events are pre-authored; replay does not invoke agents
 - HTML fixture demonstrates one neutral before/after measurement pattern
 - Trace binding covers protocol version, run/coordinator/freeze IDs, recorded mutation paths, and the canonical measurement digest — not filesystem bytes
-- Actor labels remain unauthenticated; replay checks declared labels against run metadata but does not prove who sent an event
+- Actor and seat labels remain unauthenticated; replay checks declared labels against run metadata and rejects declared same-seat review, but does not prove who sent an event or occupied a seat
+- `artifact_identity` records file/local-server/staging/production evidence context; local or localhost measurements are not deployed served proof
 - Playwright checks run at a single fixed viewport width
 - Adversarial receipt validates fixture conformance offline; it is not a live attack harness
 - Watcher calibration and the Discepto-to-watcher adapter are deterministic synthetic policy/reference gates; they are not learned classification, blinded independent validation, production oversight, or evidence of real-world efficacy
@@ -30,5 +32,25 @@ Discepto is a **synthetic protocol and replay reference only**.
 - Fatal errors stop replay; nonfatal rejections are recorded and replay continues
 - Release tooling validates structure, file types, UTF-8 integrity, and example-domain emails — not semantic correctness
 - CI pins action SHAs and Node 22; local environments may differ slightly in Playwright engine builds
+
+## Authority rejection catch-rate table
+
+The protocol currently has thirteen stable authority rejection codes. The adversarial fixture exercises four; the watcher-adapter unit test enumerates all thirteen code/operation pairs. “No” means the code is not currently produced by `fixtures/adversarial-events.json`, not that the guard is untested.
+
+| Code | Operation | Adversarial fixture |
+| --- | --- | --- |
+| `LEASE_ISSUER_MISMATCH` | `lease` | Yes |
+| `LEASE_WRITER_MISMATCH` | `lease` | No |
+| `LEASE_INITIAL_INACTIVE` | `lease` | No |
+| `LEASE_SCOPE_WIDENING` | `lease` | No |
+| `MUTATION_CHALLENGER` | `mutation` | Yes |
+| `MUTATION_NO_ACTIVE_LEASE` | `mutation` | No |
+| `MUTATION_WRITER_MISMATCH` | `mutation` | No |
+| `MUTATION_OUTSIDE_SCOPE` | `mutation` | No |
+| `REVIEW_REVIEWER_MISMATCH` | `review` | Yes |
+| `REVIEW_SAME_SEAT` | `review` | Yes |
+| `REVIEW_NO_CURRENT_FREEZE` | `review` | No |
+| `REVIEW_BINDING_MISMATCH` | `review` | No |
+| `REVIEW_FREEZE_MISMATCH` | `review` | No |
 
 Use this repository for vocabulary, fixture calibration, and offline authority testing — not as deployed oversight infrastructure.

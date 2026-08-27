@@ -93,7 +93,7 @@ describe('adversarial trace', () => {
     assert.equal(receipt.phase, 'FINAL');
     assert.equal(receipt.final, true);
     assert.equal(receipt.current_freeze_id, 'freeze-001');
-    assert.equal(receipt.rejection_count, 3);
+    assert.equal(receipt.rejection_count, 4);
     assert.deepEqual(receipt.errors, []);
     assert.deepEqual(receipt.expected_match, {
       phase: true,

@@ -89,6 +89,7 @@
     "type": "review",
     "review": {
       "reviewer_id": "agent-alpha",
+      "seat_id": "writer-seat",
       "freeze_id": "freeze-001",
       "freeze_binding": "aa3df7692a184ea3a0e99234b1e963f29fd44e9a289e4e0522de65c9de5f743c",
       "verdict": "PASS",
@@ -99,6 +100,18 @@
     "type": "review",
     "review": {
       "reviewer_id": "agent-beta",
+      "seat_id": "writer-seat",
+      "freeze_id": "freeze-001",
+      "freeze_binding": "aa3df7692a184ea3a0e99234b1e963f29fd44e9a289e4e0522de65c9de5f743c",
+      "verdict": "PASS",
+      "findings": []
+    }
+  },
+  {
+    "type": "review",
+    "review": {
+      "reviewer_id": "agent-beta",
+      "seat_id": "challenger-seat",
       "freeze_id": "freeze-001",
       "freeze_binding": "aa3df7692a184ea3a0e99234b1e963f29fd44e9a289e4e0522de65c9de5f743c",
       "verdict": "PASS",

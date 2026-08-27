@@ -20,8 +20,8 @@ const baseRun = {
   worktree_id: 'wt-test',
   coordinator_id: 'coordinator-test',
   agents: [
-    { id: 'writer-1', role: 'writer' },
-    { id: 'challenger-1', role: 'challenger' },
+    { id: 'writer-1', role: 'writer', seat_id: 'writer-seat' },
+    { id: 'challenger-1', role: 'challenger', seat_id: 'challenger-seat' },
   ],
   phase: 'DIAGNOSE',
 };
@@ -48,6 +48,18 @@ describe('schema validation', () => {
     assert.match(result.error, /distinct from agent ids/);
   });
 
+  it('rejects duplicate agent seat ids', () => {
+    const result = validateRun({
+      ...baseRun,
+      agents: [
+        { id: 'writer-1', role: 'writer', seat_id: 'same-seat' },
+        { id: 'challenger-1', role: 'challenger', seat_id: 'same-seat' },
+      ],
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.error, /seat ids must be unique/);
+  });
+
   it('rejects run with wrong agent count', () => {
     const result = validateRun({ ...baseRun, agents: [baseRun.agents[0]] });
     assert.equal(result.ok, false);
@@ -58,8 +70,8 @@ describe('schema validation', () => {
     const result = validateRun({
       ...baseRun,
       agents: [
-        { id: 'same', role: 'writer' },
-        { id: 'same', role: 'challenger' },
+        { id: 'same', role: 'writer', seat_id: 'writer-seat' },
+        { id: 'same', role: 'challenger', seat_id: 'challenger-seat' },
       ],
     });
     assert.equal(result.ok, false);
@@ -70,8 +82,8 @@ describe('schema validation', () => {
     const result = validateRun({
       ...baseRun,
       agents: [
-        { id: 'a', role: 'writer' },
-        { id: 'b', role: 'writer' },
+        { id: 'a', role: 'writer', seat_id: 'a-seat' },
+        { id: 'b', role: 'writer', seat_id: 'b-seat' },
       ],
     });
     assert.equal(result.ok, false);
@@ -188,9 +200,22 @@ describe('schema validation', () => {
     assert.match(result.error, /reviewer_id is required/);
   });
 
+  it('rejects review without seat_id', () => {
+    const result = validateReview({
+      reviewer_id: 'c',
+      freeze_id: 'f',
+      freeze_binding: '0000000000000000000000000000000000000000000000000000000000000000',
+      verdict: 'PASS',
+      findings: [],
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.error, /review.seat_id is required/);
+  });
+
   it('rejects review without freeze_binding', () => {
     const result = validateReview({
       reviewer_id: 'c',
+      seat_id: 'reviewer-seat',
       freeze_id: 'f',
       verdict: 'PASS',
       findings: [],
@@ -202,6 +227,7 @@ describe('schema validation', () => {
   it('rejects review with malformed freeze_binding', () => {
     const result = validateReview({
       reviewer_id: 'c',
+      seat_id: 'reviewer-seat',
       freeze_id: 'f',
       freeze_binding: 'abc',
       verdict: 'PASS',
@@ -214,6 +240,7 @@ describe('schema validation', () => {
   it('rejects review with uppercase freeze_binding', () => {
     const result = validateReview({
       reviewer_id: 'c',
+      seat_id: 'reviewer-seat',
       freeze_id: 'f',
       freeze_binding: 'ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789',
       verdict: 'PASS',
@@ -226,6 +253,7 @@ describe('schema validation', () => {
   it('rejects review with wrong-length freeze_binding', () => {
     const result = validateReview({
       reviewer_id: 'c',
+      seat_id: 'reviewer-seat',
       freeze_id: 'f',
       freeze_binding: '000000000000000000000000000000000000000000000000000000000000000',
       verdict: 'PASS',
@@ -233,6 +261,38 @@ describe('schema validation', () => {
     });
     assert.equal(result.ok, false);
     assert.match(result.error, /lowercase 64-character hex digest/);
+  });
+
+  it('accepts a measurement with a file artifact identity', () => {
+    const result = validateMeasurement({
+      method: 'm',
+      observations: [{ key: 'k', value: 'v' }],
+      result: 'r',
+      artifact_identity: { kind: 'file' },
+    });
+    assert.equal(result.ok, true);
+  });
+
+  it('rejects a measurement with an unsupported artifact identity kind', () => {
+    const result = validateMeasurement({
+      method: 'm',
+      observations: [{ key: 'k', value: 'v' }],
+      result: 'r',
+      artifact_identity: { kind: 'local' },
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.error, /artifact_identity.kind must be one of/);
+  });
+
+  it('rejects a served artifact identity with a non-http URL', () => {
+    const result = validateMeasurement({
+      method: 'm',
+      observations: [{ key: 'k', value: 'v' }],
+      result: 'r',
+      artifact_identity: { kind: 'staging', url: 'file:///tmp/fixture.html' },
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.error, /artifact_identity.url must use http or https/);
   });
 
   it('exports frozen phase and role enums', () => {
@@ -257,6 +317,7 @@ describe('schema validation', () => {
     }).ok, true);
     assert.equal(validateReview({
       reviewer_id: 'c',
+      seat_id: 'reviewer-seat',
       freeze_id: 'f',
       freeze_binding: '0000000000000000000000000000000000000000000000000000000000000000',
       verdict: 'PASS',

@@ -25,6 +25,7 @@ const ALL_REJECTION_PAIRS = [
   ['MUTATION_WRITER_MISMATCH', 'mutation'],
   ['MUTATION_OUTSIDE_SCOPE', 'mutation'],
   ['REVIEW_REVIEWER_MISMATCH', 'review'],
+  ['REVIEW_SAME_SEAT', 'review'],
   ['REVIEW_NO_CURRENT_FREEZE', 'review'],
   ['REVIEW_BINDING_MISMATCH', 'review'],
   ['REVIEW_FREEZE_MISMATCH', 'review'],
@@ -43,9 +44,9 @@ function rejection(code, operation, message = 'display-only prose must not matte
 }
 
 describe('watcher adapter', () => {
-  it('all 12 code/operation pairs adapt and classify exactly', async () => {
+  it('all 13 code/operation pairs adapt and classify exactly', async () => {
     const { REJECTION_CODE_OPERATIONS, adaptAndClassify } = await import('../src/watcher-adapter.mjs');
-    assert.equal(Object.keys(REJECTION_CODE_OPERATIONS).length, 12);
+    assert.equal(Object.keys(REJECTION_CODE_OPERATIONS).length, 13);
     for (const [code, operation] of ALL_REJECTION_PAIRS) {
       const result = adaptAndClassify(rejection(code, operation), CONTEXT);
       assert.equal(result.scenario.facts.authority_status, 'mismatch');
@@ -178,11 +179,11 @@ describe('watcher adversarial receipt', () => {
     assert.deepEqual(receipt, expected);
   });
 
-  it('has three catches with valid hashes', async () => {
+  it('has four catches with valid hashes', async () => {
     const { runWatcherAdversarialDemo } = await import('../src/watcher-adversarial-demo.mjs');
     const { receipt, allCatches } = runWatcherAdversarialDemo();
-    assert.equal(receipt.observation_count, 3);
-    assert.equal(receipt.observations.length, 3);
+    assert.equal(receipt.observation_count, 4);
+    assert.equal(receipt.observations.length, 4);
     assert.ok(allCatches);
     assert.match(receipt.receipt_hash, /^[0-9a-f]{64}$/);
     assert.match(receipt.source_receipt_hash, /^[0-9a-f]{64}$/);
@@ -214,6 +215,6 @@ describe('watcher adversarial receipt', () => {
     assert.ok(allMatch);
     assert.equal(output.freeze_binding, expected.freeze_binding);
     assert.equal(output.current_freeze_id, expected.freeze_id);
-    assert.equal(output.rejection_count, 3);
+    assert.equal(output.rejection_count, 4);
   });
 });

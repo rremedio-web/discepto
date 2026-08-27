@@ -73,6 +73,7 @@
     "type": "review",
     "review": {
       "reviewer_id": "agent-beta",
+      "seat_id": "challenger-seat",
       "freeze_id": "freeze-001",
       "freeze_binding": "aa3df7692a184ea3a0e99234b1e963f29fd44e9a289e4e0522de65c9de5f743c",
       "verdict": "CHANGES_NEEDED",
@@ -116,6 +117,7 @@
     "type": "review",
     "review": {
       "reviewer_id": "agent-beta",
+      "seat_id": "challenger-seat",
       "freeze_id": "freeze-002",
       "freeze_binding": "a31751498f8ee10144390cd7ad02bfbd5d83adfd51ab25c1a692002ebed6f14e",
       "verdict": "PASS",
