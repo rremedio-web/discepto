@@ -22,8 +22,8 @@ const baseRun = {
   worktree_id: 'wt-protocol',
   coordinator_id: 'coordinator-1',
   agents: [
-    { id: 'writer-1', role: 'writer' },
-    { id: 'challenger-1', role: 'challenger' },
+    { id: 'writer-1', role: 'writer', seat_id: 'writer-seat' },
+    { id: 'challenger-1', role: 'challenger', seat_id: 'challenger-seat' },
   ],
   phase: 'DIAGNOSE',
 };
@@ -95,6 +95,7 @@ function currentBinding(state) {
 function challengerReview(state, freezeId, verdict, findings = []) {
   return applyReview(state, {
     reviewer_id: 'challenger-1',
+    seat_id: 'challenger-seat',
     freeze_id: freezeId,
     freeze_binding: currentBinding(state),
     verdict,
@@ -103,6 +104,45 @@ function challengerReview(state, freezeId, verdict, findings = []) {
 }
 
 describe('protocol authority and phase invariants', () => {
+  it('rejects review when the declared reviewer seat matches the writer seat', () => {
+    const state = createInitialState(baseRun);
+    oneFreeze(state);
+    const ok = applyReview(state, {
+      reviewer_id: 'challenger-1',
+      seat_id: 'writer-seat',
+      freeze_id: 'freeze-a',
+      freeze_binding: currentBinding(state),
+      verdict: 'PASS',
+      findings: [],
+    });
+    assert.equal(ok, false);
+    assert.equal(state.phase, 'REVIEW');
+    assert.deepEqual(state.rejections.at(-1), {
+      code: 'REVIEW_SAME_SEAT',
+      operation: 'review',
+      message: 'reviewer and writer seats must differ',
+    });
+  });
+
+  it('rejects review when the declared reviewer seat is not the challenger seat', () => {
+    const state = createInitialState(baseRun);
+    oneFreeze(state);
+    const ok = applyReview(state, {
+      reviewer_id: 'challenger-1',
+      seat_id: 'bogus-seat',
+      freeze_id: 'freeze-a',
+      freeze_binding: currentBinding(state),
+      verdict: 'PASS',
+      findings: [],
+    });
+    assert.equal(ok, false);
+    assert.equal(state.phase, 'REVIEW');
+    assert.deepEqual(state.rejections.at(-1), {
+      code: 'REVIEW_SEAT_MISMATCH',
+      operation: 'review',
+      message: 'reviewer seat must match registered challenger seat',
+    });
+  });
   it('advances DIAGNOSE to DISPUTE after both read-only diagnoses', () => {
     const state = createInitialState(baseRun);
     bothDiagnoses(state);
@@ -291,9 +331,19 @@ describe('protocol authority and phase invariants', () => {
         { key: 'c', value: '3' },
       ],
     };
+    const differentArtifact = {
+      ...base,
+      artifact_identity: { kind: 'staging', url: 'https://staging.example.test/fixture' },
+    };
+    const reorderedArtifact = {
+      ...base,
+      artifact_identity: { url: 'https://staging.example.test/fixture', kind: 'staging' },
+    };
     const hash = canonicalMeasurementHash(base);
     assert.equal(canonicalMeasurementHash(reordered), hash);
     assert.notEqual(canonicalMeasurementHash(changed), hash);
+    assert.notEqual(canonicalMeasurementHash(differentArtifact), hash);
+    assert.equal(canonicalMeasurementHash(reorderedArtifact), canonicalMeasurementHash(differentArtifact));
   });
 
   it('produces canonical SHA-256 trace binding over protocol fields including coordinator_id', () => {
@@ -356,6 +406,7 @@ describe('protocol authority and phase invariants', () => {
     oneFreeze(state);
     const ok = applyReview(state, {
       reviewer_id: 'challenger-1',
+      seat_id: 'challenger-seat',
       freeze_id: 'wrong-freeze',
       freeze_binding: currentBinding(state),
       verdict: 'PASS',
@@ -381,6 +432,7 @@ describe('protocol authority and phase invariants', () => {
     applyFreeze(state, freezeRequest('freeze-b', 'base', 'candidate-2'));
     const ok = applyReview(state, {
       reviewer_id: 'challenger-1',
+      seat_id: 'challenger-seat',
       freeze_id: 'freeze-a',
       freeze_binding: currentBinding(state),
       verdict: 'PASS',
@@ -576,6 +628,7 @@ describe('stable structured nonfatal rejections', () => {
     oneFreeze(state);
     applyReview(state, {
       reviewer_id: 'writer-1',
+      seat_id: 'writer-seat',
       freeze_id: 'freeze-a',
       freeze_binding: currentBinding(state),
       verdict: 'PASS',
@@ -589,6 +642,7 @@ describe('stable structured nonfatal rejections', () => {
     state.phase = 'REVIEW';
     applyReview(state, {
       reviewer_id: 'challenger-1',
+      seat_id: 'challenger-seat',
       freeze_id: 'freeze-a',
       freeze_binding: '0000000000000000000000000000000000000000000000000000000000000000',
       verdict: 'PASS',
@@ -602,6 +656,7 @@ describe('stable structured nonfatal rejections', () => {
     oneFreeze(state);
     applyReview(state, {
       reviewer_id: 'challenger-1',
+      seat_id: 'challenger-seat',
       freeze_id: 'freeze-a',
       freeze_binding: '0000000000000000000000000000000000000000000000000000000000000000',
       verdict: 'PASS',
@@ -615,6 +670,7 @@ describe('stable structured nonfatal rejections', () => {
     oneFreeze(state);
     applyReview(state, {
       reviewer_id: 'challenger-1',
+      seat_id: 'challenger-seat',
       freeze_id: 'wrong-freeze',
       freeze_binding: currentBinding(state),
       verdict: 'PASS',
@@ -716,6 +772,7 @@ describe('reproduced attack rejection', () => {
     applyFreeze(state, freezeRequest('freeze-b', 'base', 'candidate-2'));
     const ok = applyReview(state, {
       reviewer_id: 'challenger-1',
+      seat_id: 'challenger-seat',
       freeze_id: 'freeze-b',
       freeze_binding: staleBinding,
       verdict: 'PASS',
@@ -731,6 +788,7 @@ describe('reproduced attack rejection', () => {
     oneFreeze(state);
     const ok = applyReview(state, {
       freeze_id: 'freeze-a',
+      seat_id: 'challenger-seat',
       freeze_binding: currentBinding(state),
       verdict: 'PASS',
       findings: [],
@@ -744,6 +802,7 @@ describe('reproduced attack rejection', () => {
     oneFreeze(state);
     const ok = applyReview(state, {
       reviewer_id: 'writer-1',
+      seat_id: 'writer-seat',
       freeze_id: 'freeze-a',
       freeze_binding: currentBinding(state),
       verdict: 'PASS',
@@ -759,6 +818,7 @@ describe('reproduced attack rejection', () => {
     oneFreeze(state);
     const ok = applyReview(state, {
       reviewer_id: 'challenger-1',
+      seat_id: 'challenger-seat',
       freeze_id: 'freeze-a',
       freeze_binding: '0000000000000000000000000000000000000000000000000000000000000000',
       verdict: 'PASS',
@@ -769,8 +829,8 @@ describe('reproduced attack rejection', () => {
     assert.equal(state.errors.length, 0);
   });
 
-  it('exports protocol version constant discepto-protocol-2', () => {
-    assert.equal(PROTOCOL_VERSION, 'discepto-protocol-2');
+  it('exports protocol version constant discepto-protocol-3', () => {
+    assert.equal(PROTOCOL_VERSION, 'discepto-protocol-3');
   });
 });
 
@@ -810,6 +870,7 @@ describe('replay integration', () => {
       { type: 'freeze', freeze: freezeRequest('freeze-a') },
       { type: 'review', review: {
         reviewer_id: 'challenger-1',
+        seat_id: 'challenger-seat',
         freeze_id: 'freeze-a',
         freeze_binding: deriveFreezeBinding(
           baseRun,

@@ -14,13 +14,15 @@ export const ROLES = Object.freeze(['writer', 'challenger']);
 export const VERDICTS = Object.freeze(['PASS', 'CHANGES_NEEDED']);
 
 const RUN_FIELDS = new Set(['id', 'worktree_id', 'coordinator_id', 'agents', 'phase']);
-const AGENT_FIELDS = new Set(['id', 'role']);
+const AGENT_FIELDS = new Set(['id', 'role', 'seat_id']);
 const DIAGNOSIS_FIELDS = new Set(['agent_id', 'read_only', 'findings']);
 const LEASE_FIELDS = new Set(['issuer_id', 'writer_id', 'scope', 'active']);
-const MEASUREMENT_FIELDS = new Set(['method', 'observations', 'result']);
+const MEASUREMENT_FIELDS = new Set(['method', 'observations', 'result', 'artifact_identity']);
 const OBSERVATION_FIELDS = new Set(['key', 'value']);
+const ARTIFACT_IDENTITY_FIELDS = new Set(['kind', 'url']);
+const ARTIFACT_IDENTITY_KINDS = Object.freeze(['file', 'local-server', 'staging', 'production']);
 const FREEZE_REQUEST_FIELDS = new Set(['id', 'base_id', 'candidate_id']);
-const REVIEW_FIELDS = new Set(['reviewer_id', 'freeze_id', 'freeze_binding', 'verdict', 'findings']);
+const REVIEW_FIELDS = new Set(['reviewer_id', 'seat_id', 'freeze_id', 'freeze_binding', 'verdict', 'findings']);
 const CORRECTION_FIELDS = new Set(['supersedes', 'red_ref', 'green_ref', 'count']);
 const DISPUTE_FIELDS = new Set(['agent_id', 'claim', 'estimate']);
 const MUTATION_FIELDS = new Set(['agent_id', 'path']);
@@ -68,6 +70,7 @@ export function validateRun(run) {
     return { ok: false, error: 'run.agents must contain exactly two agents' };
   }
   const agentIds = new Set();
+  const seatIds = new Set();
   let writers = 0;
   let challengers = 0;
   for (let i = 0; i < run.agents.length; i += 1) {
@@ -82,13 +85,20 @@ export function validateRun(run) {
     if (!isNonEmptyString(agent.id)) {
       return { ok: false, error: `run.agents[${i}].id is required` };
     }
+    if (!isNonEmptyString(agent.seat_id)) {
+      return { ok: false, error: `run.agents[${i}].seat_id is required` };
+    }
     if (!ROLES.includes(agent.role)) {
       return { ok: false, error: `invalid role: ${agent.role}` };
     }
     if (agentIds.has(agent.id)) {
       return { ok: false, error: 'agent ids must be unique' };
     }
+    if (seatIds.has(agent.seat_id)) {
+      return { ok: false, error: 'seat ids must be unique' };
+    }
     agentIds.add(agent.id);
+    seatIds.add(agent.seat_id);
     if (agent.role === 'writer') writers += 1;
     if (agent.role === 'challenger') challengers += 1;
   }
@@ -100,7 +110,16 @@ export function validateRun(run) {
   }
   const writerId = [...run.agents].find((a) => a.role === 'writer').id;
   const challengerId = [...run.agents].find((a) => a.role === 'challenger').id;
-  return { ok: true, writerId, challengerId, coordinatorId: run.coordinator_id };
+  const writerSeatId = [...run.agents].find((a) => a.role === 'writer').seat_id;
+  const challengerSeatId = [...run.agents].find((a) => a.role === 'challenger').seat_id;
+  return {
+    ok: true,
+    writerId,
+    writerSeatId,
+    challengerId,
+    challengerSeatId,
+    coordinatorId: run.coordinator_id,
+  };
 }
 
 export function validateDiagnosis(diagnosis) {
@@ -184,6 +203,40 @@ export function validateMeasurement(measurement) {
   if (!isNonEmptyString(measurement.result)) {
     return { ok: false, error: 'measurement.result is required' };
   }
+  if (measurement.artifact_identity !== undefined) {
+    const identity = measurement.artifact_identity;
+    if (typeof identity !== 'object' || identity === null || Array.isArray(identity)) {
+      return { ok: false, error: 'measurement.artifact_identity must be an object' };
+    }
+    const identityUnknown = unknownKeys(identity, ARTIFACT_IDENTITY_FIELDS);
+    if (identityUnknown.length > 0) {
+      return { ok: false, error: `measurement.artifact_identity has unknown fields: ${identityUnknown.join(', ')}` };
+    }
+    if (!ARTIFACT_IDENTITY_KINDS.includes(identity.kind)) {
+      return {
+        ok: false,
+        error: `measurement.artifact_identity.kind must be one of: ${ARTIFACT_IDENTITY_KINDS.join(', ')}`,
+      };
+    }
+    if (identity.url !== undefined) {
+      if (!isNonEmptyString(identity.url)) {
+        return { ok: false, error: 'measurement.artifact_identity.url must be a non-empty string' };
+      }
+      let parsedUrl;
+      try {
+        parsedUrl = new URL(identity.url);
+      } catch {
+        return { ok: false, error: 'measurement.artifact_identity.url must be a valid URL' };
+      }
+      const expectedProtocol = identity.kind === 'file' ? 'file:' : null;
+      if (expectedProtocol && parsedUrl.protocol !== expectedProtocol) {
+        return { ok: false, error: 'measurement.artifact_identity.url must use file' };
+      }
+      if (!expectedProtocol && !['http:', 'https:'].includes(parsedUrl.protocol)) {
+        return { ok: false, error: 'measurement.artifact_identity.url must use http or https' };
+      }
+    }
+  }
   return { ok: true };
 }
 
@@ -213,6 +266,9 @@ export function validateReview(review) {
   }
   if (!isNonEmptyString(review.reviewer_id)) {
     return { ok: false, error: 'review.reviewer_id is required' };
+  }
+  if (!isNonEmptyString(review.seat_id)) {
+    return { ok: false, error: 'review.seat_id is required' };
   }
   if (!isNonEmptyString(review.freeze_id)) {
     return { ok: false, error: 'review.freeze_id is required' };

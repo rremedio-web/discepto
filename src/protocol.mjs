@@ -12,7 +12,7 @@ import {
   PHASES,
 } from './schema.mjs';
 
-export const PROTOCOL_VERSION = 'discepto-protocol-2';
+export const PROTOCOL_VERSION = 'discepto-protocol-3';
 
 const PHASE_INDEX = Object.fromEntries(PHASES.map((phase, index) => [phase, index]));
 
@@ -31,6 +31,12 @@ export function canonicalMeasurementHash(measurement) {
     observations: sortObservations(measurement.observations),
     result: measurement.result,
   };
+  if (measurement.artifact_identity !== undefined) {
+    payload.artifact_identity = { kind: measurement.artifact_identity.kind };
+    if (measurement.artifact_identity.url !== undefined) {
+      payload.artifact_identity.url = measurement.artifact_identity.url;
+    }
+  }
   return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
 }
 
@@ -75,7 +81,9 @@ export function createInitialState(run) {
     run,
     phase: 'DIAGNOSE',
     writerId: validated.writerId,
+    writerSeatId: validated.writerSeatId,
     challengerId: validated.challengerId,
+    challengerSeatId: validated.challengerSeatId,
     coordinatorId: validated.coordinatorId,
     diagnoses: new Map(),
     disputes: [],
@@ -286,6 +294,12 @@ export function applyFreeze(state, freeze) {
 function validateReviewAuthority(state, review) {
   if (review.reviewer_id !== state.challengerId) {
     return reject(state, 'REVIEW_REVIEWER_MISMATCH', 'review', 'reviewer must be challenger');
+  }
+  if (review.seat_id === state.writerSeatId) {
+    return reject(state, 'REVIEW_SAME_SEAT', 'review', 'reviewer and writer seats must differ');
+  }
+  if (review.seat_id !== state.challengerSeatId) {
+    return reject(state, 'REVIEW_SEAT_MISMATCH', 'review', 'reviewer seat must match registered challenger seat');
   }
   const freeze = currentFreeze(state);
   if (!freeze) return reject(state, 'REVIEW_NO_CURRENT_FREEZE', 'review', 'review requires current freeze');

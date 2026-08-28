@@ -1,9 +1,9 @@
 {
   "watcher_calibration_version": "watcher-calibration-1",
-  "source_protocol_version": "discepto-protocol-2",
+  "source_protocol_version": "discepto-protocol-3",
   "source_fixture_id": "adversarial-neutral-001",
-  "source_receipt_hash": "693cf60ded7b3cc635780bb4a07725cf75d2a63f199554a03c18a24e968ba9b4",
-  "observation_count": 3,
+  "source_receipt_hash": "73e3b569cadb03f9e685baebb7219103b4e894ae715187d244bcfaaa2f66e224",
+  "observation_count": 4,
   "observations": [
     {
       "rejection_code": "LEASE_ISSUER_MISMATCH",
@@ -31,7 +31,16 @@
       "classification": "RECORDS_TRUST",
       "disposition": "HOLD",
       "owner_decision": "yes"
+    },
+    {
+      "rejection_code": "REVIEW_SAME_SEAT",
+      "operation": "review",
+      "scenario_id": "discepto-run-neutral-001-ccdf0e6aa9b068a338b903bb919568c84f06a85750348276eaad0f883319fd88-3-review-same-seat",
+      "evidence_ref": "ev-discepto-run-neutral-001-ccdf0e6aa9b068a338b903bb919568c84f06a85750348276eaad0f883319fd88-3-review-same-seat",
+      "classification": "RECORDS_TRUST",
+      "disposition": "HOLD",
+      "owner_decision": "yes"
     }
   ],
-  "receipt_hash": "8e1b26ac9c7e01aa0c00c2e6be60a99dd4783e5e61a8446a1e5a23e34499cd7e"
+  "receipt_hash": "0ad47c51e5171d2b396433dde19a354ab7dbcca4e4a14d0c58bc0bd9f0491f71"
 }

@@ -73,8 +73,9 @@
     "type": "review",
     "review": {
       "reviewer_id": "agent-beta",
+      "seat_id": "challenger-seat",
       "freeze_id": "freeze-001",
-      "freeze_binding": "aa3df7692a184ea3a0e99234b1e963f29fd44e9a289e4e0522de65c9de5f743c",
+      "freeze_binding": "7fe7351ead418c635a0cb959b14f17c68ceb3a95439d0361b70dd2bb418b3e75",
       "verdict": "CHANGES_NEEDED",
       "findings": ["overflow resolved but nowrap not yet applied in candidate"]
     }
@@ -116,8 +117,9 @@
     "type": "review",
     "review": {
       "reviewer_id": "agent-beta",
+      "seat_id": "challenger-seat",
       "freeze_id": "freeze-002",
-      "freeze_binding": "a31751498f8ee10144390cd7ad02bfbd5d83adfd51ab25c1a692002ebed6f14e",
+      "freeze_binding": "68df7dbe0ff0f470f620d06d95e9dad609091f435a57d54efdc9c385998373b4",
       "verdict": "PASS",
       "findings": []
     }

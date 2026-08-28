@@ -87,13 +87,13 @@ describe('adversarial trace', () => {
     assert.equal(first.stdout, second.stdout);
 
     const receipt = JSON.parse(first.stdout);
-    assert.equal(receipt.protocol_version, 'discepto-protocol-2');
+    assert.equal(receipt.protocol_version, 'discepto-protocol-3');
     assert.equal(receipt.fixture_id, 'adversarial-neutral-001');
     assert.equal(receipt.run_id, 'run-neutral-001');
     assert.equal(receipt.phase, 'FINAL');
     assert.equal(receipt.final, true);
     assert.equal(receipt.current_freeze_id, 'freeze-001');
-    assert.equal(receipt.rejection_count, 3);
+    assert.equal(receipt.rejection_count, 4);
     assert.deepEqual(receipt.errors, []);
     assert.deepEqual(receipt.expected_match, {
       phase: true,

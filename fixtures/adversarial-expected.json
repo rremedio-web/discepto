@@ -3,8 +3,8 @@
   "phase": "FINAL",
   "final": true,
   "freeze_id": "freeze-001",
-  "freeze_binding": "aa3df7692a184ea3a0e99234b1e963f29fd44e9a289e4e0522de65c9de5f743c",
-  "rejection_count": 3,
+  "freeze_binding": "7fe7351ead418c635a0cb959b14f17c68ceb3a95439d0361b70dd2bb418b3e75",
+  "rejection_count": 4,
   "rejections": [
     {
       "code": "LEASE_ISSUER_MISMATCH",
@@ -20,6 +20,11 @@
       "code": "REVIEW_REVIEWER_MISMATCH",
       "operation": "review",
       "message": "reviewer must be challenger"
+    },
+    {
+      "code": "REVIEW_SAME_SEAT",
+      "operation": "review",
+      "message": "reviewer and writer seats must differ"
     }
   ]
 }

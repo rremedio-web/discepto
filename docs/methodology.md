@@ -4,14 +4,14 @@ Discepto is a synthetic reference experiment, not a live orchestrator.
 
 ## Experiment design
 
-1. **Fixture scenario** — neutral token table with generic long tokens; `Run` includes `coordinator_id` distinct from agent ids
+1. **Fixture scenario** — neutral token table with generic long tokens; `Run` includes `coordinator_id` distinct from agent ids and unique writer/challenger seat IDs
 2. **Event trace** — ordered protocol events covering all phases including one correction cycle in the neutral trace
-3. **Adversarial trace** — same scenario run with a rejected lease whose declared `issuer_id` does not match `run.coordinator_id`, challenger mutation, and writer `reviewer_id` before valid challenger `PASS`; proves rejections do not alter final binding
-4. **Measurement fixture** — static HTML with `?variant=after` query toggle
+3. **Adversarial trace** — same scenario run with a rejected lease whose declared `issuer_id` does not match `run.coordinator_id`, challenger mutation, writer `reviewer_id`, and challenger review whose `seat_id` matches the writer seat before valid challenger `PASS`; proves rejections do not alter final binding
+4. **Measurement fixture** — static HTML with `?variant=after` query toggle; the optional `artifact_identity` records whether evidence came from a file, local server, staging, or production target
 5. **Cross-engine checks** — Playwright captures structured measurements (line count, overflow px) in Chromium, Firefox, and WebKit at 320px width
 6. **Replay validation** — deterministic stdout JSON compared across runs; adversarial demo compared byte-identically across two invocations
 7. **Watcher calibration** — isolated classifier scored against train/held-out fixtures via `npm run validate:watcher`; synthetic policy gate only
-8. **Watcher adversarial receipt** — adapts the three adversarial rejections through `src/watcher-adapter.mjs` and emits deterministic JSON via `npm run demo:watcher:adversarial`; not blinded independent validation or production oversight
+8. **Watcher adversarial receipt** — adapts the four adversarial rejections through `src/watcher-adapter.mjs` and emits deterministic JSON via `npm run demo:watcher:adversarial`; not blinded independent validation or production oversight
 
 ## Dispute resolution
 
@@ -27,7 +27,11 @@ When review returns `CHANGES_NEEDED`, exactly one correction is permitted. The w
 
 ## Challenger review
 
-Reviews require a declared `reviewer_id` equal to the challenger's id, the current `freeze_id`, and the matching `freeze_binding` digest. Stale freeze IDs, binding mismatches, or writer-label review mismatch are nonfatal rejections.
+Reviews require a declared `reviewer_id` equal to the challenger's id, a `seat_id` equal to the registered challenger seat and different from the writer seat, the current `freeze_id`, and the matching `freeze_binding` digest. Stale freeze IDs, binding mismatches, writer-label review mismatch, unregistered reviewer seats, or same-seat review are nonfatal rejections. Seat labels are still declarations rather than authentication.
+
+## Artifact identity
+
+`Measurement.artifact_identity` is optional for compatibility with legacy traces. When present, `kind` is one of `file`, `local-server`, `staging`, or `production`, with an optional target URL. A `file://` or localhost measurement is local evidence and is not equivalent to served proof from a deployed staging or production URL; the field records that distinction but does not authenticate the target.
 
 ## Neutrality
 
