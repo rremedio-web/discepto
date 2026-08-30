@@ -55,6 +55,7 @@ Unknown fields and invalid enums are rejected.
 - Challenger mutation: always rejected (nonfatal)
 - Writer mutation outside lease scope: rejected (nonfatal)
 - Dispute cannot advance without measured evidence
+- Worker diagnoses, prose, and start/stop requests are queued untrusted text, not protocol events; only coordinator-authorized trace events recorded in the trace change phase or state
 - Review must reference current freeze; stale reviews rejected (nonfatal)
 - Review `freeze_binding` must match the current freeze binding digest
 - Declared `reviewer_id` must equal the challenger's id; writer-label mismatch on review is rejected (nonfatal)

@@ -13,6 +13,8 @@ Discepto is a synthetic reference experiment, not a live orchestrator.
 7. **Watcher calibration** — isolated classifier scored against train/held-out fixtures via `npm run validate:watcher`; synthetic policy gate only
 8. **Watcher adversarial receipt** — adapts the four adversarial rejections through `src/watcher-adapter.mjs` and emits deterministic JSON via `npm run demo:watcher:adversarial`; not blinded independent validation or production oversight
 
+Cross-engine captures and replay comparisons require per-variant identity evidence: each variant arm is settled after every swap and its arm authenticity recorded, because a runtime cache can serve a stale arm across an A/B swap and make the arms read as different when they are not. When both arms are identical, the comparison is recorded as `NON-DISCRIMINATING` — the measurement failed to discriminate between variants — and is never counted as confidence in either variant's superiority.
+
 ## Dispute resolution
 
 Agents may disagree in prose during DISPUTE. Estimates and claims never advance phase. A single discriminating measurement (viewport overflow and token line count) is the only valid resolver. After measurement, phase is observable as MEASURE until the first active lease whose declared `issuer_id` matches `run.coordinator_id` advances to IMPLEMENT.
