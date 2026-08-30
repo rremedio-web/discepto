@@ -9,7 +9,7 @@
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "validate": "node src/validate.mjs",
-    "demo": "node src/demo.mjs",
+    "demo": "node src/replay.mjs",
     "replay": "node src/replay.mjs",
     "demo:adversarial": "node src/adversarial-demo.mjs",
     "validate:watcher": "node calibration/watcher/validate.mjs",

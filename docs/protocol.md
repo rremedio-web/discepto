@@ -61,11 +61,22 @@ Unknown fields and invalid enums are rejected.
 - Declared review `seat_id` is required; it must match the registered challenger seat and a seat matching the writer seat is rejected (nonfatal)
 - `CHANGES_NEEDED` → one correction max → new freeze required with unique freeze ID
 - Second correction: fail closed (fatal)
+- `MUTATION_WRITER_MISMATCH` is retained as a fail-closed defence and is documented unreachable: lease rules already pin every accepted lease's `writer_id` to the predesignated writer, so no legal event sequence can produce it. The no-current-freeze review guards are defences of the same kind, because REVIEW is only reachable after a freeze set the current freeze. Kept guards stay; they are simply not reachable through replayed events.
 
 ## Fatal errors vs nonfatal rejections
 
 - **Fatal errors** — schema violations, wrong phase for structural events, duplicate measurements, replay stops immediately
 - **Nonfatal rejections** — authority failures (lease `issuer_id` mismatch, challenger mutation, binding mismatch, writer-label review mismatch, same-seat review) recorded in `rejections[]` as structured `{ code, operation, message }`; replay continues so rejected attempts do not alter accepted binding
+
+## Replay interface
+
+`replayEvents(run, events)` returns outcomes as values, not state to inspect: `{ snapshot, outcomes[] }`. Each outcome is one of:
+
+- `{ status: 'accepted' }`
+- `{ status: 'rejected', code, operation, message }` — the same record the snapshot's `rejections[]` carries
+- `{ status: 'fatal', message }` — replay stops after the first fatal outcome
+
+The mutable replay state is private to the protocol module; the snapshot plus the ordered outcome list are the only public results of a replay. Tests and fixtures author traces through this same seam.
 
 ## Trace binding
 
@@ -78,7 +89,7 @@ Freeze identity is a canonical SHA-256 digest over:
 - `base_id`
 - `candidate_id`
 - sorted recorded mutation paths (derived from applied mutations, not request fields)
-- canonical measurement digest (`method`, sorted observations, `result`)
+- canonical measurement digest (`method`, sorted observations, `result`, and `artifact_identity` when present)
 
 Reviews and corrections must align with the current freeze chain. The binding covers declared protocol fields only. It does **not** hash filesystem bytes or attest to file contents on disk.
 
@@ -90,6 +101,6 @@ The neutral scenario uses `fixtures/events.json`. The adversarial trace (`fixtur
 
 ## Watcher adapter boundary
 
-`src/watcher-adapter.mjs` consumes structured Discepto rejections `{ code, operation, message }` but maps scenarios using `code` and `operation` only. It supports the fourteen stable authority rejection codes emitted by `src/protocol.mjs`, validates code/operation pairs fail-closed, and classifies adapted scenarios through the isolated watcher classifier. This is a deterministic synthetic policy/reference gate — not learned classification, blinded independent validation, production oversight, or real-world efficacy.
+`src/watcher-adapter.mjs` exposes one function, `observeRejection(rejection, context)`, which consumes a structured Discepto rejection and returns the watcher observation record (`rejection_code`, `operation`, `scenario_id`, `evidence_ref`, `classification`, `disposition`, `owner_decision`). It maps using `code` and `operation` only — never the rejection message — supports the fourteen stable authority rejection codes derived from the protocol catalogue, validates code/operation pairs fail-closed, and classifies through the isolated watcher classifier as an internal seam. Every code maps to the same deterministic policy gate (RECORDS_TRUST / HOLD / yes) by design. This is a deterministic synthetic policy/reference gate — not learned classification, blinded independent validation, production oversight, or real-world efficacy.
 
 `npm run demo:watcher:adversarial` adapts the four adversarial trace rejections and emits a deterministic watcher receipt with `watcher_calibration_version`, source protocol version/fixture/receipt hash, `observation_count`, observations (`rejection_code`, `operation`, `scenario_id`, `evidence_ref`, `classification`, `disposition`, `owner_decision`), and `receipt_hash`. Rejection messages are omitted from the watcher receipt body.

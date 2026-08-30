@@ -30,12 +30,13 @@ Discepto is a **synthetic protocol and replay reference only**.
 - Freeze IDs must be unique within a run
 - Mutations follow a strict schema; unknown fields are rejected
 - Fatal errors stop replay; nonfatal rejections are recorded and replay continues
+- `MUTATION_WRITER_MISMATCH` is kept as a fail-closed defence and documented unreachable (accepted leases always pin `writer_id` to the predesignated writer); the no-current-freeze review guards are kept as defences of the same kind. The catalogue still owns their codes and the watcher adapter still enumerates them.
 - Release tooling validates structure, file types, UTF-8 integrity, and example-domain emails — not semantic correctness
 - CI pins action SHAs and Node 22; local environments may differ slightly in Playwright engine builds
 
 ## Authority rejection catch-rate table
 
-The protocol currently has fourteen stable authority rejection codes. The adversarial fixture exercises four; the watcher-adapter unit test enumerates all fourteen code/operation pairs. “No” means the code is not currently produced by `fixtures/adversarial-events.json`, not that the guard is untested.
+The protocol currently has fourteen stable authority rejection codes, owned by the `AUTHORITY_REJECTIONS` catalogue in `src/protocol.mjs`. This table and the watcher adapter both derive from that catalogue; a test fails if the table drifts. The adversarial fixture exercises four; the watcher-adapter unit test enumerates all fourteen code/operation pairs. "No" means the code is not currently produced by `fixtures/adversarial-events.json`, not that the guard is untested.
 
 | Code | Operation | Adversarial fixture |
 | --- | --- | --- |

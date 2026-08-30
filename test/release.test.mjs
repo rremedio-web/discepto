@@ -32,7 +32,14 @@ function hasGitWorktree(cwd = root) {
   return resolve(toplevel) === resolvedCwd;
 }
 
-const itRequiresGit = hasGitWorktree() ? it : it.skip;
+const hasWorktree = hasGitWorktree();
+const itRequiresGit = hasWorktree ? it : it.skip;
+if (!hasWorktree) {
+  console.warn(
+    'release.test: LOUD SKIP — no git worktree detected; git-dependent release tests will not run.'
+    + ' Run the suite inside a git checkout/worktree to execute them.',
+  );
+}
 
 function runRelease(extraArgs = [], cwd = root) {
   return spawnSync('bash', [join(cwd, 'scripts/release.sh'), ...extraArgs], {

@@ -14,6 +14,74 @@ import {
 
 export const PROTOCOL_VERSION = 'discepto-protocol-3';
 
+/**
+ * The single authority-rejection catalogue. Every code the protocol can emit
+ * is declared here with its operation and its message variants; the watcher
+ * adapter, the tests, the docs table, and the fixture expectations all derive
+ * from this table. Adding a code means adding one entry here.
+ */
+export const AUTHORITY_REJECTIONS = Object.freeze({
+  LEASE_ISSUER_MISMATCH: Object.freeze({
+    operation: 'lease',
+    messages: Object.freeze({
+      default: 'lease must be coordinator-issued',
+      first: 'first lease must be coordinator-issued',
+    }),
+  }),
+  LEASE_WRITER_MISMATCH: Object.freeze({
+    operation: 'lease',
+    messages: Object.freeze({ default: 'lease writer_id must match predesignated writer' }),
+  }),
+  LEASE_INITIAL_INACTIVE: Object.freeze({
+    operation: 'lease',
+    messages: Object.freeze({ default: 'first lease must be active' }),
+  }),
+  LEASE_SCOPE_WIDENING: Object.freeze({
+    operation: 'lease',
+    messages: Object.freeze({ default: 'lease scope widening rejected' }),
+  }),
+  MUTATION_CHALLENGER: Object.freeze({
+    operation: 'mutation',
+    messages: Object.freeze({ default: 'challenger mutation rejected' }),
+  }),
+  MUTATION_NO_ACTIVE_LEASE: Object.freeze({
+    operation: 'mutation',
+    messages: Object.freeze({ default: 'mutation rejected without active lease' }),
+  }),
+  MUTATION_WRITER_MISMATCH: Object.freeze({
+    operation: 'mutation',
+    messages: Object.freeze({ default: 'mutation writer_id mismatch' }),
+  }),
+  MUTATION_OUTSIDE_SCOPE: Object.freeze({
+    operation: 'mutation',
+    messages: Object.freeze({ default: 'mutation path outside lease scope' }),
+  }),
+  REVIEW_REVIEWER_MISMATCH: Object.freeze({
+    operation: 'review',
+    messages: Object.freeze({ default: 'reviewer must be challenger' }),
+  }),
+  REVIEW_SAME_SEAT: Object.freeze({
+    operation: 'review',
+    messages: Object.freeze({ default: 'reviewer and writer seats must differ' }),
+  }),
+  REVIEW_SEAT_MISMATCH: Object.freeze({
+    operation: 'review',
+    messages: Object.freeze({ default: 'reviewer seat must match registered challenger seat' }),
+  }),
+  REVIEW_NO_CURRENT_FREEZE: Object.freeze({
+    operation: 'review',
+    messages: Object.freeze({ default: 'review requires current freeze' }),
+  }),
+  REVIEW_BINDING_MISMATCH: Object.freeze({
+    operation: 'review',
+    messages: Object.freeze({ default: 'freeze_binding mismatch' }),
+  }),
+  REVIEW_FREEZE_MISMATCH: Object.freeze({
+    operation: 'review',
+    messages: Object.freeze({ default: 'review must reference current freeze' }),
+  }),
+});
+
 const PHASE_INDEX = Object.fromEntries(PHASES.map((phase, index) => [phase, index]));
 
 function sortObservations(observations) {
@@ -72,19 +140,41 @@ function copyLease(lease) {
   };
 }
 
-export function createInitialState(run) {
+/**
+ * Replay outcomes are values, not side effects to be read off the state:
+ *   { status: 'accepted' }
+ *   { status: 'rejected', code, operation, message }
+ *   { status: 'fatal', message }
+ * The mutable state struct below is private to this module; the only public
+ * read of a replay is the snapshot plus the ordered outcome list.
+ */
+
+function roster(run) {
+  const writer = run.agents.find((agent) => agent.role === 'writer');
+  const challenger = run.agents.find((agent) => agent.role === 'challenger');
+  return {
+    writerId: writer.id,
+    writerSeatId: writer.seat_id,
+    challengerId: challenger.id,
+    challengerSeatId: challenger.seat_id,
+    coordinatorId: run.coordinator_id,
+  };
+}
+
+function createInitialState(run) {
   const validated = validateRun(run);
   if (!validated.ok) {
     throw new Error(validated.error);
   }
+  const seated = roster(run);
   return {
     run,
     phase: 'DIAGNOSE',
-    writerId: validated.writerId,
-    writerSeatId: validated.writerSeatId,
-    challengerId: validated.challengerId,
-    challengerSeatId: validated.challengerSeatId,
-    coordinatorId: validated.coordinatorId,
+    writerId: seated.writerId,
+    writerSeatId: seated.writerSeatId,
+    challengerId: seated.challengerId,
+    challengerSeatId: seated.challengerSeatId,
+    coordinatorId: seated.coordinatorId,
     diagnoses: new Map(),
     disputes: [],
     measurement: null,
@@ -103,12 +193,18 @@ export function createInitialState(run) {
 
 function fail(state, message) {
   state.errors.push(message);
-  return false;
+  return { status: 'fatal', message };
 }
 
-function reject(state, code, operation, message) {
-  state.rejections.push({ code, operation, message });
-  return false;
+function reject(state, code, variant = 'default') {
+  const rule = AUTHORITY_REJECTIONS[code];
+  const message = rule?.messages[variant];
+  if (rule === undefined || message === undefined) {
+    throw new Error(`uncatalogued rejection: ${code} (${variant})`);
+  }
+  const rejection = { code, operation: rule.operation, message };
+  state.rejections.push(rejection);
+  return { status: 'rejected', ...rejection };
 }
 
 function agentRole(state, agentId) {
@@ -118,29 +214,26 @@ function agentRole(state, agentId) {
 
 function requirePhase(state, expected) {
   if (state.phase !== expected) {
-    fail(state, `expected phase ${expected}, got ${state.phase}`);
-    return false;
+    return fail(state, `expected phase ${expected}, got ${state.phase}`);
   }
-  return true;
+  return null;
 }
 
 function advancePhase(state, next) {
   if (PHASE_INDEX[next] <= PHASE_INDEX[state.phase]) {
-    fail(state, `cannot advance to ${next} from ${state.phase}`);
-    return false;
+    return fail(state, `cannot advance to ${next} from ${state.phase}`);
   }
   state.phase = next;
-  return true;
+  return null;
 }
 
 function currentFreeze(state) {
   return state.freezes.find((item) => item.id === state.currentFreezeId) ?? null;
 }
 
-export function applyDiagnosis(state, diagnosis) {
-  const result = validateDiagnosis(diagnosis);
-  if (!result.ok) return fail(state, result.error);
-  if (!requirePhase(state, 'DIAGNOSE')) return false;
+function applyDiagnosis(state, diagnosis) {
+  const phaseOutcome = requirePhase(state, 'DIAGNOSE');
+  if (phaseOutcome) return phaseOutcome;
 
   const role = agentRole(state, diagnosis.agent_id);
   if (!role) return fail(state, 'diagnosis agent_id not in run');
@@ -150,15 +243,15 @@ export function applyDiagnosis(state, diagnosis) {
 
   state.diagnoses.set(diagnosis.agent_id, diagnosis);
   if (state.diagnoses.size === 2) {
-    advancePhase(state, 'DISPUTE');
+    const advanceOutcome = advancePhase(state, 'DISPUTE');
+    if (advanceOutcome) return advanceOutcome;
   }
-  return true;
+  return { status: 'accepted' };
 }
 
-export function applyDispute(state, dispute) {
-  const result = validateDispute(dispute);
-  if (!result.ok) return fail(state, result.error);
-  if (!requirePhase(state, 'DISPUTE')) return false;
+function applyDispute(state, dispute) {
+  const phaseOutcome = requirePhase(state, 'DISPUTE');
+  if (phaseOutcome) return phaseOutcome;
 
   const role = agentRole(state, dispute.agent_id);
   if (!role) return fail(state, 'dispute agent_id not in run');
@@ -167,20 +260,19 @@ export function applyDispute(state, dispute) {
   }
 
   state.disputes.push(dispute);
-  return true;
+  return { status: 'accepted' };
 }
 
-export function applyMeasurement(state, measurement) {
-  const result = validateMeasurement(measurement);
-  if (!result.ok) return fail(state, result.error);
+function applyMeasurement(state, measurement) {
 
   if (state.phase === 'DISPUTE') {
     if (state.disputes.length < 2) {
       return fail(state, 'measurement requires both dispute claims');
     }
     state.measurement = measurement;
-    advancePhase(state, 'MEASURE');
-    return true;
+    const advanceOutcome = advancePhase(state, 'MEASURE');
+    if (advanceOutcome) return advanceOutcome;
+    return { status: 'accepted' };
   }
 
   if (state.phase === 'MEASURE') {
@@ -190,48 +282,46 @@ export function applyMeasurement(state, measurement) {
   return fail(state, 'measurement not allowed in current phase');
 }
 
-export function applyLease(state, lease) {
-  const result = validateLease(lease);
-  if (!result.ok) return fail(state, result.error);
+function applyLease(state, lease) {
 
   const isFirstLease = state.lease === null;
 
   if (isFirstLease) {
-    if (!requirePhase(state, 'MEASURE')) return false;
+    const phaseOutcome = requirePhase(state, 'MEASURE');
+    if (phaseOutcome) return phaseOutcome;
     if (lease.issuer_id !== state.coordinatorId) {
-      return reject(state, 'LEASE_ISSUER_MISMATCH', 'lease', 'first lease must be coordinator-issued');
+      return reject(state, 'LEASE_ISSUER_MISMATCH', 'first');
     }
     if (lease.writer_id !== state.writerId) {
-      return reject(state, 'LEASE_WRITER_MISMATCH', 'lease', 'lease writer_id must match predesignated writer');
+      return reject(state, 'LEASE_WRITER_MISMATCH');
     }
     if (!lease.active) {
-      return reject(state, 'LEASE_INITIAL_INACTIVE', 'lease', 'first lease must be active');
+      return reject(state, 'LEASE_INITIAL_INACTIVE');
     }
     state.lease = copyLease(lease);
-    advancePhase(state, 'IMPLEMENT');
-    return true;
+    const advanceOutcome = advancePhase(state, 'IMPLEMENT');
+    if (advanceOutcome) return advanceOutcome;
+    return { status: 'accepted' };
   }
 
   if (state.phase !== 'IMPLEMENT' && state.phase !== 'CORRECT') {
     return fail(state, 'lease not allowed in current phase');
   }
   if (lease.issuer_id !== state.coordinatorId) {
-    return reject(state, 'LEASE_ISSUER_MISMATCH', 'lease', 'lease must be coordinator-issued');
+    return reject(state, 'LEASE_ISSUER_MISMATCH');
   }
   if (lease.writer_id !== state.writerId) {
-    return reject(state, 'LEASE_WRITER_MISMATCH', 'lease', 'lease writer_id must match predesignated writer');
+    return reject(state, 'LEASE_WRITER_MISMATCH');
   }
   if (!scopeSubset(lease.scope, state.lease.scope)) {
-    return reject(state, 'LEASE_SCOPE_WIDENING', 'lease', 'lease scope widening rejected');
+    return reject(state, 'LEASE_SCOPE_WIDENING');
   }
 
   state.lease = copyLease(lease);
-  return true;
+  return { status: 'accepted' };
 }
 
-export function applyMutation(state, mutation) {
-  const result = validateMutation(mutation);
-  if (!result.ok) return fail(state, result.error);
+function applyMutation(state, mutation) {
 
   const { agent_id: agentId, path } = mutation;
 
@@ -240,26 +330,27 @@ export function applyMutation(state, mutation) {
   }
 
   const role = agentRole(state, agentId);
-  if (role === 'challenger') return reject(state, 'MUTATION_CHALLENGER', 'mutation', 'challenger mutation rejected');
+  if (role === 'challenger') return reject(state, 'MUTATION_CHALLENGER');
   if (role !== 'writer') return fail(state, 'mutation agent_id not in run');
 
   if (!state.lease || !state.lease.active) {
-    return reject(state, 'MUTATION_NO_ACTIVE_LEASE', 'mutation', 'mutation rejected without active lease');
+    return reject(state, 'MUTATION_NO_ACTIVE_LEASE');
   }
+  // Fail-closed defence, documented unreachable: applyLease already pins every
+  // accepted lease's writer_id to the predesignated writer, so no legal event
+  // sequence can reach this guard. Kept per doctrine: guards stay.
   if (state.lease.writer_id !== agentId) {
-    return reject(state, 'MUTATION_WRITER_MISMATCH', 'mutation', 'mutation writer_id mismatch');
+    return reject(state, 'MUTATION_WRITER_MISMATCH');
   }
   if (!state.lease.scope.includes(path)) {
-    return reject(state, 'MUTATION_OUTSIDE_SCOPE', 'mutation', 'mutation path outside lease scope');
+    return reject(state, 'MUTATION_OUTSIDE_SCOPE');
   }
 
   state.mutations.push({ agent_id: agentId, path });
-  return true;
+  return { status: 'accepted' };
 }
 
-export function applyFreeze(state, freeze) {
-  const result = validateFreeze(freeze);
-  if (!result.ok) return fail(state, result.error);
+function applyFreeze(state, freeze) {
   if (state.phase !== 'IMPLEMENT') {
     return fail(state, 'freeze not allowed in current phase');
   }
@@ -286,62 +377,69 @@ export function applyFreeze(state, freeze) {
     binding,
   });
   state.currentFreezeId = freeze.id;
-  advancePhase(state, 'FREEZE');
-  advancePhase(state, 'REVIEW');
-  return true;
+  const advanceFreezeOutcome = advancePhase(state, 'FREEZE');
+  if (advanceFreezeOutcome) return advanceFreezeOutcome;
+  const advanceReviewOutcome = advancePhase(state, 'REVIEW');
+  if (advanceReviewOutcome) return advanceReviewOutcome;
+  return { status: 'accepted' };
 }
 
 function validateReviewAuthority(state, review) {
   if (review.reviewer_id !== state.challengerId) {
-    return reject(state, 'REVIEW_REVIEWER_MISMATCH', 'review', 'reviewer must be challenger');
+    return reject(state, 'REVIEW_REVIEWER_MISMATCH');
   }
   if (review.seat_id === state.writerSeatId) {
-    return reject(state, 'REVIEW_SAME_SEAT', 'review', 'reviewer and writer seats must differ');
+    return reject(state, 'REVIEW_SAME_SEAT');
   }
   if (review.seat_id !== state.challengerSeatId) {
-    return reject(state, 'REVIEW_SEAT_MISMATCH', 'review', 'reviewer seat must match registered challenger seat');
+    return reject(state, 'REVIEW_SEAT_MISMATCH');
   }
+  // Fail-closed defence, documented unreachable: REVIEW is only reachable
+  // after a freeze set currentFreezeId, and corrections always clear it on
+  // the way back to IMPLEMENT. Kept per doctrine: guards stay.
   const freeze = currentFreeze(state);
-  if (!freeze) return reject(state, 'REVIEW_NO_CURRENT_FREEZE', 'review', 'review requires current freeze');
+  if (!freeze) return reject(state, 'REVIEW_NO_CURRENT_FREEZE');
   if (review.freeze_binding !== freeze.binding) {
-    return reject(state, 'REVIEW_BINDING_MISMATCH', 'review', 'freeze_binding mismatch');
+    return reject(state, 'REVIEW_BINDING_MISMATCH');
   }
-  return true;
+  return null;
 }
 
-export function applyReview(state, review) {
-  const result = validateReview(review);
-  if (!result.ok) return fail(state, result.error);
-  if (!requirePhase(state, 'REVIEW')) return false;
-  if (!state.currentFreezeId) return reject(state, 'REVIEW_NO_CURRENT_FREEZE', 'review', 'review requires current freeze');
+function applyReview(state, review) {
+  const phaseOutcome = requirePhase(state, 'REVIEW');
+  if (phaseOutcome) return phaseOutcome;
+  // Fail-closed defence, documented unreachable (see validateReviewAuthority).
+  if (!state.currentFreezeId) return reject(state, 'REVIEW_NO_CURRENT_FREEZE');
   if (review.freeze_id !== state.currentFreezeId) {
-    return reject(state, 'REVIEW_FREEZE_MISMATCH', 'review', 'review must reference current freeze');
+    return reject(state, 'REVIEW_FREEZE_MISMATCH');
   }
-  if (!validateReviewAuthority(state, review)) return false;
+  const authorityOutcome = validateReviewAuthority(state, review);
+  if (authorityOutcome) return authorityOutcome;
 
   state.reviews.push(review);
 
   if (review.verdict === 'PASS') {
-    advancePhase(state, 'FINAL');
+    const advanceOutcome = advancePhase(state, 'FINAL');
+    if (advanceOutcome) return advanceOutcome;
     state.final = true;
-    return true;
+    return { status: 'accepted' };
   }
 
   if (review.verdict === 'CHANGES_NEEDED') {
-    advancePhase(state, 'CORRECT');
-    return true;
+    const advanceOutcome = advancePhase(state, 'CORRECT');
+    if (advanceOutcome) return advanceOutcome;
+    return { status: 'accepted' };
   }
 
   return fail(state, 'invalid review verdict');
 }
 
-export function applyCorrection(state, correction) {
-  const result = validateCorrection(correction);
-  if (!result.ok) return fail(state, result.error);
+function applyCorrection(state, correction) {
   if (state.correctionCount >= 1) {
     return fail(state, 'second correction rejected');
   }
-  if (!requirePhase(state, 'CORRECT')) return false;
+  const phaseOutcome = requirePhase(state, 'CORRECT');
+  if (phaseOutcome) return phaseOutcome;
   if (correction.supersedes !== state.currentFreezeId) {
     return fail(state, 'correction must supersede current freeze');
   }
@@ -351,10 +449,10 @@ export function applyCorrection(state, correction) {
   state.mutations = [];
   state.currentFreezeId = null;
   state.phase = 'IMPLEMENT';
-  return true;
+  return { status: 'accepted' };
 }
 
-export function snapshotState(state) {
+function snapshotState(state) {
   const freeze = currentFreeze(state);
   return {
     phase: state.phase,
@@ -380,46 +478,48 @@ export function snapshotState(state) {
   };
 }
 
+/**
+ * The event catalogue: dispatch is data. Each event type pairs its record
+ * validator with its apply seam; replayEvents iterates this table instead of
+ * switching. Adding an event type means adding one row (plus its spec).
+ */
+export const EVENTS = Object.freeze({
+  diagnosis: Object.freeze({ validate: validateDiagnosis, apply: applyDiagnosis }),
+  dispute: Object.freeze({ validate: validateDispute, apply: applyDispute }),
+  measurement: Object.freeze({ validate: validateMeasurement, apply: applyMeasurement }),
+  lease: Object.freeze({ validate: validateLease, apply: applyLease }),
+  mutation: Object.freeze({ validate: validateMutation, apply: applyMutation }),
+  freeze: Object.freeze({ validate: validateFreeze, apply: applyFreeze }),
+  review: Object.freeze({ validate: validateReview, apply: applyReview }),
+  correction: Object.freeze({ validate: validateCorrection, apply: applyCorrection }),
+});
+
 export function replayEvents(run, events) {
   const state = createInitialState(run);
+  const outcomes = [];
 
   for (const event of events) {
     if (!event || typeof event.type !== 'string') {
-      fail(state, 'event requires type');
+      outcomes.push(fail(state, 'event requires type'));
       break;
     }
 
-    switch (event.type) {
-      case 'diagnosis':
-        applyDiagnosis(state, event.diagnosis);
-        break;
-      case 'dispute':
-        applyDispute(state, event.dispute);
-        break;
-      case 'measurement':
-        applyMeasurement(state, event.measurement);
-        break;
-      case 'lease':
-        applyLease(state, event.lease);
-        break;
-      case 'mutation':
-        applyMutation(state, event.mutation);
-        break;
-      case 'freeze':
-        applyFreeze(state, event.freeze);
-        break;
-      case 'review':
-        applyReview(state, event.review);
-        break;
-      case 'correction':
-        applyCorrection(state, event.correction);
-        break;
-      default:
-        fail(state, `unknown event type: ${event.type}`);
+    const entry = EVENTS[event.type];
+    if (!entry) {
+      outcomes.push(fail(state, `unknown event type: ${event.type}`));
+      break;
     }
 
-    if (state.errors.length > 0) break;
+    const validation = entry.validate(event[event.type]);
+    if (!validation.ok) {
+      outcomes.push(fail(state, validation.error));
+      break;
+    }
+
+    const outcome = entry.apply(state, event[event.type]);
+    outcomes.push(outcome);
+    if (outcome.status === 'fatal') break;
   }
 
-  return state;
+  return { snapshot: snapshotState(state), outcomes };
 }

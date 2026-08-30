@@ -1,24 +1,15 @@
 import { createHash } from 'node:crypto';
+import { AUTHORITY_REJECTIONS } from './protocol.mjs';
 import { classify } from '../calibration/watcher/classifier.mjs';
 
 export const WATCHER_CALIBRATION_VERSION = 'watcher-calibration-1';
 
-export const REJECTION_CODE_OPERATIONS = Object.freeze({
-  LEASE_ISSUER_MISMATCH: 'lease',
-  LEASE_WRITER_MISMATCH: 'lease',
-  LEASE_INITIAL_INACTIVE: 'lease',
-  LEASE_SCOPE_WIDENING: 'lease',
-  MUTATION_CHALLENGER: 'mutation',
-  MUTATION_NO_ACTIVE_LEASE: 'mutation',
-  MUTATION_WRITER_MISMATCH: 'mutation',
-  MUTATION_OUTSIDE_SCOPE: 'mutation',
-  REVIEW_REVIEWER_MISMATCH: 'review',
-  REVIEW_SAME_SEAT: 'review',
-  REVIEW_SEAT_MISMATCH: 'review',
-  REVIEW_NO_CURRENT_FREEZE: 'review',
-  REVIEW_BINDING_MISMATCH: 'review',
-  REVIEW_FREEZE_MISMATCH: 'review',
-});
+// Derived from the protocol's authority-rejection catalogue; not a second copy.
+const REJECTION_CODE_OPERATIONS = Object.freeze(
+  Object.fromEntries(
+    Object.entries(AUTHORITY_REJECTIONS).map(([code, rule]) => [code, rule.operation]),
+  ),
+);
 
 function slugFromCode(code) {
   return code.toLowerCase().replace(/_/g, '-');
@@ -76,21 +67,7 @@ function authorityFacts(operation) {
   };
 }
 
-export function adaptRejection(rejection, context = {}) {
-  if (!rejection || typeof rejection !== 'object' || Array.isArray(rejection)) {
-    throw new Error('rejection must be an object');
-  }
-
-  const code = rejection.code;
-  const operation = rejection.operation;
-  const expectedOperation = REJECTION_CODE_OPERATIONS[code];
-  if (!expectedOperation) {
-    throw new Error(`unknown rejection code: ${code}`);
-  }
-  if (operation !== expectedOperation) {
-    throw new Error(`code/operation mismatch: ${code} expects ${expectedOperation}, got ${operation}`);
-  }
-
+function buildScenario(code, operation, context) {
   const runId = resolveRunId(context);
   const scope = context.scope ?? runId;
   const sequence = resolveSequence(context);
@@ -112,11 +89,34 @@ export function adaptRejection(rejection, context = {}) {
   };
 }
 
-export function adaptAndClassify(rejection, context = {}) {
-  const scenario = adaptRejection(rejection, context);
+/**
+ * The adapter's one function: turn a structured protocol rejection into the
+ * watcher observation record the watcher receipt carries. Scenario
+ * construction and classification are internal seams; the observation maps
+ * `code` and `operation` only and never reads the rejection message.
+ */
+export function observeRejection(rejection, context = {}) {
+  if (!rejection || typeof rejection !== 'object' || Array.isArray(rejection)) {
+    throw new Error('rejection must be an object');
+  }
+
+  const code = rejection.code;
+  const operation = rejection.operation;
+  const expectedOperation = REJECTION_CODE_OPERATIONS[code];
+  if (!expectedOperation) {
+    throw new Error(`unknown rejection code: ${code}`);
+  }
+  if (operation !== expectedOperation) {
+    throw new Error(`code/operation mismatch: ${code} expects ${expectedOperation}, got ${operation}`);
+  }
+
+  const scenario = buildScenario(code, operation, context);
   const result = classify(scenario);
   return {
-    scenario,
+    rejection_code: code,
+    operation,
+    scenario_id: scenario.id,
+    evidence_ref: scenario.evidence[0].ref,
     classification: result.classification,
     disposition: result.disposition,
     owner_decision: result.owner_decision,
