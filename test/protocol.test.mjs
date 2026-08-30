@@ -17,7 +17,6 @@ import {
   snapshotState,
   EVENT_APPLIERS,
 } from '../src/protocol.mjs';
-import { EVENT_VALIDATORS } from '../src/schema.mjs';
 
 const baseRun = {
   id: 'run-protocol',
@@ -899,10 +898,10 @@ describe('replay integration', () => {
 });
 
 describe('event vocabulary', () => {
-  it('every event type has exactly one validator and one applier', () => {
+  it('EVENT_APPLIERS is the single closed event vocabulary', () => {
     assert.deepEqual(
       Object.keys(EVENT_APPLIERS).sort(),
-      Object.keys(EVENT_VALIDATORS).sort(),
+      ['correction', 'diagnosis', 'dispute', 'freeze', 'lease', 'measurement', 'mutation', 'review'],
     );
   });
 

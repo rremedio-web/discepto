@@ -351,14 +351,3 @@ export function validatePhase(value) {
   }
   return { ok: true };
 }
-
-export const EVENT_VALIDATORS = Object.freeze({
-  diagnosis: validateDiagnosis,
-  dispute: validateDispute,
-  measurement: validateMeasurement,
-  lease: validateLease,
-  mutation: validateMutation,
-  freeze: validateFreeze,
-  review: validateReview,
-  correction: validateCorrection,
-});
