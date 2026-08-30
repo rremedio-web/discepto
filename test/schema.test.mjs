@@ -16,16 +16,9 @@ import {
   VERDICTS,
 } from '../src/schema.mjs';
 
-const baseRun = {
-  id: 'run-test',
-  worktree_id: 'wt-test',
-  coordinator_id: 'coordinator-test',
-  agents: [
-    { id: 'writer-1', role: 'writer', seat_id: 'writer-seat' },
-    { id: 'challenger-1', role: 'challenger', seat_id: 'challenger-seat' },
-  ],
-  phase: 'DIAGNOSE',
-};
+import { buildRun } from './helpers.mjs';
+
+const baseRun = buildRun();
 
 describe('strictRecord kernel', () => {
   const inner = { name: 'inner', fields: { value: { kind: 'string' } } };

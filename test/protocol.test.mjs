@@ -12,18 +12,12 @@ import {
   replayEvents,
 } from '../src/protocol.mjs';
 
+import { buildRun } from './helpers.mjs';
+
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-const baseRun = {
-  id: 'run-protocol',
-  worktree_id: 'wt-protocol',
-  coordinator_id: 'coordinator-1',
-  agents: [
-    { id: 'writer-1', role: 'writer', seat_id: 'writer-seat' },
-    { id: 'challenger-1', role: 'challenger', seat_id: 'challenger-seat' },
-  ],
-  phase: 'DIAGNOSE',
-};
+const baseRun = buildRun();
+const coordinatorId = baseRun.coordinator_id;
 
 const measurement = {
   method: 'm',
@@ -45,7 +39,7 @@ const disputeEv = (agentId) => ev('dispute', { agent_id: agentId, claim: 'c1', e
 const measurementEv = (m = measurement) => ev('measurement', m);
 const leaseEv = (issuerId, { writerId = 'writer-1', scope = ['src/a.mjs'], active = true } = {}) =>
   ev('lease', { issuer_id: issuerId, writer_id: writerId, scope, active });
-const coordinatorLease = (opts) => leaseEv('coordinator-1', opts);
+const coordinatorLease = (opts) => leaseEv(coordinatorId, opts);
 const writerLease = (opts) => leaseEv('writer-1', opts);
 const mutationEv = (agentId, path = 'src/a.mjs') => ev('mutation', { agent_id: agentId, path });
 const freezeEv = (id, baseId = 'base', candidateId = 'candidate') =>
@@ -478,7 +472,7 @@ describe('stable structured nonfatal rejections', () => {
   it('maps lease writer mismatch on first lease', () => {
     const result = replayEvents(baseRun, [
       ...throughMeasurement,
-      leaseEv('coordinator-1', { writerId: 'challenger-1' }),
+      leaseEv(coordinatorId, { writerId: 'challenger-1' }),
     ]);
     assertRejected(result, 'LEASE_WRITER_MISMATCH');
   });
