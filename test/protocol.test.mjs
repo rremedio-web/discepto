@@ -7,6 +7,7 @@ import {
   deriveFreezeBinding,
   canonicalMeasurementHash,
   AUTHORITY_REJECTIONS,
+  EVENTS,
   PROTOCOL_VERSION,
   replayEvents,
 } from '../src/protocol.mjs';
@@ -646,6 +647,34 @@ describe('reproduced attack rejection', () => {
 });
 
 describe('replay outcome values', () => {
+  it('event catalogue drives dispatch as data', () => {
+    assert.deepEqual(Object.keys(EVENTS), [
+      'diagnosis',
+      'dispute',
+      'measurement',
+      'lease',
+      'mutation',
+      'freeze',
+      'review',
+      'correction',
+    ]);
+    for (const [type, entry] of Object.entries(EVENTS)) {
+      assert.equal(typeof entry.validate, 'function', `${type} validator missing`);
+      assert.equal(typeof entry.apply, 'function', `${type} apply missing`);
+    }
+  });
+
+  it('event payload schema violations surface as fatal outcomes with schema messages', () => {
+    const result = replayEvents(baseRun, [
+      ...throughFirstLease,
+      ev('mutation', { agent_id: 'writer-1', path: 'src/a.mjs', forged: true }),
+    ]);
+    assert.deepEqual(result.outcomes.at(-1), {
+      status: 'fatal',
+      message: 'mutation has unknown fields: forged',
+    });
+  });
+
   it('clean trace yields accepted outcome for every event', () => {
     const result = replayEvents(baseRun, throughMeasurement);
     assert.deepEqual(result.outcomes, [

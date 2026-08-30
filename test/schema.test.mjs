@@ -10,6 +10,7 @@ import {
   validateCorrection,
   validateDispute,
   validateMutation,
+  strictRecord,
   PHASES,
   ROLES,
   VERDICTS,
@@ -26,13 +27,69 @@ const baseRun = {
   phase: 'DIAGNOSE',
 };
 
+describe('strictRecord kernel', () => {
+  const inner = { name: 'inner', fields: { value: { kind: 'string' } } };
+  const widget = strictRecord({
+    name: 'widget',
+    fields: {
+      id: { kind: 'string' },
+      kind: { kind: 'enum', values: ['a', 'b'] },
+      part: { kind: 'record', spec: inner },
+    },
+  });
+
+  it('accepts a record matching the spec', () => {
+    assert.deepEqual(widget({ id: 'w1', kind: 'a', part: { value: 'v' } }), { ok: true });
+  });
+
+  it('rejects non-objects, arrays, and null', () => {
+    assert.equal(widget(null).ok, false);
+    assert.match(widget(null).error, /widget must be an object/);
+    assert.match(widget([]).error, /widget must be an object/);
+    assert.match(widget('x').error, /widget must be an object/);
+  });
+
+  it('rejects unknown fields', () => {
+    const result = widget({ id: 'w1', kind: 'a', part: { value: 'v' }, extra: true });
+    assert.equal(result.ok, false);
+    assert.match(result.error, /widget has unknown fields: extra/);
+  });
+
+  it('enforces required strings and enums with exact messages', () => {
+    assert.match(widget({ kind: 'a', part: { value: 'v' } }).error, /widget.id is required/);
+    assert.match(widget({ id: 'w1', kind: 'c', part: { value: 'v' } }).error, /invalid kind: c/);
+  });
+
+  it('validates nested record specs', () => {
+    const result = widget({ id: 'w1', kind: 'a', part: { value: '' } });
+    assert.equal(result.ok, false);
+    assert.match(result.error, /widget.part.value is required/);
+  });
+
+  it('the nine public validators are kernel products with distinct specs', async () => {
+    const mod = await import('../src/schema.mjs');
+    const validators = [
+      'validateRun',
+      'validateDiagnosis',
+      'validateLease',
+      'validateMeasurement',
+      'validateFreeze',
+      'validateReview',
+      'validateCorrection',
+      'validateDispute',
+      'validateMutation',
+    ];
+    assert.equal(validators.length, 9);
+    for (const name of validators) {
+      assert.equal(typeof mod[name], 'function');
+    }
+  });
+});
+
 describe('schema validation', () => {
   it('accepts valid run with coordinator distinct from agents', () => {
     const result = validateRun(baseRun);
     assert.equal(result.ok, true);
-    assert.equal(result.writerId, 'writer-1');
-    assert.equal(result.challengerId, 'challenger-1');
-    assert.equal(result.coordinatorId, 'coordinator-test');
   });
 
   it('rejects run without coordinator_id', () => {

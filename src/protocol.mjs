@@ -149,19 +149,32 @@ function copyLease(lease) {
  * read of a replay is the snapshot plus the ordered outcome list.
  */
 
+function roster(run) {
+  const writer = run.agents.find((agent) => agent.role === 'writer');
+  const challenger = run.agents.find((agent) => agent.role === 'challenger');
+  return {
+    writerId: writer.id,
+    writerSeatId: writer.seat_id,
+    challengerId: challenger.id,
+    challengerSeatId: challenger.seat_id,
+    coordinatorId: run.coordinator_id,
+  };
+}
+
 function createInitialState(run) {
   const validated = validateRun(run);
   if (!validated.ok) {
     throw new Error(validated.error);
   }
+  const seated = roster(run);
   return {
     run,
     phase: 'DIAGNOSE',
-    writerId: validated.writerId,
-    writerSeatId: validated.writerSeatId,
-    challengerId: validated.challengerId,
-    challengerSeatId: validated.challengerSeatId,
-    coordinatorId: validated.coordinatorId,
+    writerId: seated.writerId,
+    writerSeatId: seated.writerSeatId,
+    challengerId: seated.challengerId,
+    challengerSeatId: seated.challengerSeatId,
+    coordinatorId: seated.coordinatorId,
     diagnoses: new Map(),
     disputes: [],
     measurement: null,
@@ -219,8 +232,6 @@ function currentFreeze(state) {
 }
 
 function applyDiagnosis(state, diagnosis) {
-  const result = validateDiagnosis(diagnosis);
-  if (!result.ok) return fail(state, result.error);
   const phaseOutcome = requirePhase(state, 'DIAGNOSE');
   if (phaseOutcome) return phaseOutcome;
 
@@ -239,8 +250,6 @@ function applyDiagnosis(state, diagnosis) {
 }
 
 function applyDispute(state, dispute) {
-  const result = validateDispute(dispute);
-  if (!result.ok) return fail(state, result.error);
   const phaseOutcome = requirePhase(state, 'DISPUTE');
   if (phaseOutcome) return phaseOutcome;
 
@@ -255,8 +264,6 @@ function applyDispute(state, dispute) {
 }
 
 function applyMeasurement(state, measurement) {
-  const result = validateMeasurement(measurement);
-  if (!result.ok) return fail(state, result.error);
 
   if (state.phase === 'DISPUTE') {
     if (state.disputes.length < 2) {
@@ -276,8 +283,6 @@ function applyMeasurement(state, measurement) {
 }
 
 function applyLease(state, lease) {
-  const result = validateLease(lease);
-  if (!result.ok) return fail(state, result.error);
 
   const isFirstLease = state.lease === null;
 
@@ -317,8 +322,6 @@ function applyLease(state, lease) {
 }
 
 function applyMutation(state, mutation) {
-  const result = validateMutation(mutation);
-  if (!result.ok) return fail(state, result.error);
 
   const { agent_id: agentId, path } = mutation;
 
@@ -348,8 +351,6 @@ function applyMutation(state, mutation) {
 }
 
 function applyFreeze(state, freeze) {
-  const result = validateFreeze(freeze);
-  if (!result.ok) return fail(state, result.error);
   if (state.phase !== 'IMPLEMENT') {
     return fail(state, 'freeze not allowed in current phase');
   }
@@ -405,8 +406,6 @@ function validateReviewAuthority(state, review) {
 }
 
 function applyReview(state, review) {
-  const result = validateReview(review);
-  if (!result.ok) return fail(state, result.error);
   const phaseOutcome = requirePhase(state, 'REVIEW');
   if (phaseOutcome) return phaseOutcome;
   // Fail-closed defence, documented unreachable (see validateReviewAuthority).
@@ -436,8 +435,6 @@ function applyReview(state, review) {
 }
 
 function applyCorrection(state, correction) {
-  const result = validateCorrection(correction);
-  if (!result.ok) return fail(state, result.error);
   if (state.correctionCount >= 1) {
     return fail(state, 'second correction rejected');
   }
@@ -481,6 +478,22 @@ function snapshotState(state) {
   };
 }
 
+/**
+ * The event catalogue: dispatch is data. Each event type pairs its record
+ * validator with its apply seam; replayEvents iterates this table instead of
+ * switching. Adding an event type means adding one row (plus its spec).
+ */
+export const EVENTS = Object.freeze({
+  diagnosis: Object.freeze({ validate: validateDiagnosis, apply: applyDiagnosis }),
+  dispute: Object.freeze({ validate: validateDispute, apply: applyDispute }),
+  measurement: Object.freeze({ validate: validateMeasurement, apply: applyMeasurement }),
+  lease: Object.freeze({ validate: validateLease, apply: applyLease }),
+  mutation: Object.freeze({ validate: validateMutation, apply: applyMutation }),
+  freeze: Object.freeze({ validate: validateFreeze, apply: applyFreeze }),
+  review: Object.freeze({ validate: validateReview, apply: applyReview }),
+  correction: Object.freeze({ validate: validateCorrection, apply: applyCorrection }),
+});
+
 export function replayEvents(run, events) {
   const state = createInitialState(run);
   const outcomes = [];
@@ -491,36 +504,19 @@ export function replayEvents(run, events) {
       break;
     }
 
-    let outcome;
-    switch (event.type) {
-      case 'diagnosis':
-        outcome = applyDiagnosis(state, event.diagnosis);
-        break;
-      case 'dispute':
-        outcome = applyDispute(state, event.dispute);
-        break;
-      case 'measurement':
-        outcome = applyMeasurement(state, event.measurement);
-        break;
-      case 'lease':
-        outcome = applyLease(state, event.lease);
-        break;
-      case 'mutation':
-        outcome = applyMutation(state, event.mutation);
-        break;
-      case 'freeze':
-        outcome = applyFreeze(state, event.freeze);
-        break;
-      case 'review':
-        outcome = applyReview(state, event.review);
-        break;
-      case 'correction':
-        outcome = applyCorrection(state, event.correction);
-        break;
-      default:
-        outcome = fail(state, `unknown event type: ${event.type}`);
+    const entry = EVENTS[event.type];
+    if (!entry) {
+      outcomes.push(fail(state, `unknown event type: ${event.type}`));
+      break;
     }
 
+    const validation = entry.validate(event[event.type]);
+    if (!validation.ok) {
+      outcomes.push(fail(state, validation.error));
+      break;
+    }
+
+    const outcome = entry.apply(state, event[event.type]);
     outcomes.push(outcome);
     if (outcome.status === 'fatal') break;
   }
