@@ -43,12 +43,12 @@ This kit is **not** proven multi-agent orchestration, production safety certific
 ## Layout
 
 - `src/schema.mjs` — structure and enum validation
-- `src/protocol.mjs` — phase authority, lease rules, trace binding
-- `src/replay.mjs` — offline event replay with deterministic JSON output
-- `src/demo.mjs` — stdout-only demonstration
-- `src/adversarial-demo.mjs` — deterministic adversarial trace receipt to stdout
+- `src/protocol.mjs` — phase authority, lease rules, trace binding, authority-rejection catalogue
+- `src/receipt.mjs` — one receipt runner: fixture load, replay, expected match, sealed receipt hash
+- `src/replay.mjs` — neutral fixture replay CLI
+- `src/adversarial-demo.mjs` — adversarial trace receipt CLI
 - `src/watcher-adapter.mjs` — maps Discepto structured rejections to watcher scenarios (code/operation only)
-- `src/watcher-adversarial-demo.mjs` — deterministic synthetic watcher adversarial receipt to stdout
+- `src/watcher-adversarial-demo.mjs` — watcher adversarial receipt CLI layered on the receipt module
 - `src/validate.mjs` — fixture and neutrality checks
 - `calibration/watcher/` — isolated watcher calibration classifier, fixtures, validation, and demo (no Discepto imports)
 - `fixtures/` — synthetic scenario, events, expected state, adversarial trace, and watcher adversarial expected receipt

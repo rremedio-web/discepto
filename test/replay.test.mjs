@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { runReplay } from '../src/replay.mjs';
+import { runReplay } from '../src/receipt.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 

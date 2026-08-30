@@ -727,8 +727,8 @@ describe('authority rejection catalogue derivation', () => {
 
 describe('replay integration', () => {
   it('replays fixture events without errors', async () => {
-    const { loadFixtures } = await import('../src/replay.mjs');
-    const { scenario, events } = loadFixtures();
+    const { loadFixtureSet } = await import('../src/receipt.mjs');
+    const { scenario, events } = loadFixtureSet('events.json', 'expected.json');
     const { snapshot } = replayEvents(scenario.run, events);
     assert.deepEqual(snapshot.errors, []);
     assert.equal(snapshot.phase, 'FINAL');

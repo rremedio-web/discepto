@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { runAdversarialDemo } from '../src/adversarial-demo.mjs';
+import { runAdversarialDemo } from '../src/receipt.mjs';
 import { AUTHORITY_REJECTIONS } from '../src/protocol.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');

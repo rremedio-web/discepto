@@ -9,12 +9,13 @@ import {
   AUTHORITY_REJECTIONS,
   replayEvents,
 } from '../src/protocol.mjs';
-import {
-  loadAdversarialFixtures,
-  runAdversarialDemo,
-} from '../src/adversarial-demo.mjs';
+import { loadFixtureSet, runAdversarialDemo } from '../src/receipt.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+
+function loadAdversarialFixtures() {
+  return loadFixtureSet('adversarial-events.json', 'adversarial-expected.json');
+}
 
 function replayWithoutRejections(scenario, events) {
   const filtered = events.filter((event) => {

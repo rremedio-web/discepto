@@ -1,7 +1,6 @@
-import { createHash } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
-import { runAdversarialDemo } from './adversarial-demo.mjs';
+import { runAdversarialDemo, sealReceipt } from './receipt.mjs';
 import { adaptAndClassify, WATCHER_CALIBRATION_VERSION } from './watcher-adapter.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -38,8 +37,7 @@ export function buildWatcherAdversarialReceipt(adversarialOutput) {
     observations,
   };
 
-  const receipt_hash = createHash('sha256').update(JSON.stringify(body)).digest('hex');
-  return { ...body, receipt_hash };
+  return sealReceipt(body);
 }
 
 export function runWatcherAdversarialDemo(baseDir = root) {
