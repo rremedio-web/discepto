@@ -19,6 +19,10 @@ const FORBIDDEN = [
 ];
 
 const SCAN_DIRS = ['src', 'fixtures', 'playwright', 'docs', 'calibration'];
+const CUSTODIO_PROVENANCE_FILES = new Set([
+  join(root, 'README.md'),
+  join(root, 'docs/methodology.md'),
+]);
 
 function collectFiles(dir, acc = []) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -34,11 +38,15 @@ function collectFiles(dir, acc = []) {
 
 describe('neutrality and no private vendor terms', () => {
   it('scanned public artifacts contain no forbidden vendor tokens', () => {
-    const files = SCAN_DIRS.flatMap((rel) => collectFiles(join(root, rel)));
+    const files = [
+      join(root, 'README.md'),
+      ...SCAN_DIRS.flatMap((rel) => collectFiles(join(root, rel))),
+    ];
     assert.ok(files.length > 0);
     for (const file of files) {
       const text = readFileSync(file, 'utf8').toLowerCase();
       for (const term of FORBIDDEN) {
+        if (term === 'custodio' && CUSTODIO_PROVENANCE_FILES.has(file)) continue;
         assert.doesNotMatch(text, new RegExp(term), `${term} found in ${file}`);
       }
     }

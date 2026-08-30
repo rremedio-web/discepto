@@ -10,8 +10,12 @@ Discepto is a synthetic reference experiment, not a live orchestrator.
 4. **Measurement fixture** — static HTML with `?variant=after` query toggle; the optional `artifact_identity` records whether evidence came from a file, local server, staging, or production target
 5. **Cross-engine checks** — Playwright captures structured measurements (line count, overflow px) in Chromium, Firefox, and WebKit at 320px width
 6. **Replay validation** — deterministic stdout JSON compared across runs; adversarial demo compared byte-identically across two invocations
-7. **Watcher calibration** — isolated classifier scored against train/held-out fixtures via `npm run validate:watcher`; synthetic policy gate only
+7. **Integrated Custodio watcher calibration** — isolated structured-fact classifier scored against train/held-out fixtures via `npm run validate:watcher`; synthetic policy gate only
 8. **Watcher adversarial receipt** — adapts the four adversarial rejections through `src/watcher-adapter.mjs` and emits deterministic JSON via `npm run demo:watcher:adversarial`; not blinded independent validation or production oversight
+
+## Custodio integration
+
+The integrated watcher module carries forward the classification, disposition, and owner-decision outcomes represented by the archived Custodio prototype's eight failure patterns. Discepto replaces Custodio's fixture-authored `failure_class` labels with validated structured facts and ordered precedence, expands evaluation to distinct train and held-out sets with wrong-answer and baseline controls, and connects structured protocol rejections through `src/watcher-adapter.mjs`. The module does not import Custodio source; the standalone repository remains a frozen reproducibility reference rather than a runtime dependency.
 
 ## Dispute resolution
 
