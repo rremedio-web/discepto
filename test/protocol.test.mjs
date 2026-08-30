@@ -1,5 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   createInitialState,
   applyDiagnosis,
@@ -12,10 +15,13 @@ import {
   applyCorrection,
   deriveFreezeBinding,
   canonicalMeasurementHash,
+  AUTHORITY_REJECTIONS,
   PROTOCOL_VERSION,
   replayEvents,
   snapshotState,
 } from '../src/protocol.mjs';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 const baseRun = {
   id: 'run-protocol',
@@ -831,6 +837,35 @@ describe('reproduced attack rejection', () => {
 
   it('exports protocol version constant discepto-protocol-3', () => {
     assert.equal(PROTOCOL_VERSION, 'discepto-protocol-3');
+  });
+});
+
+describe('authority rejection catalogue derivation', () => {
+  it('docs limitations table matches the catalogue exactly', () => {
+    const markdown = readFileSync(join(root, 'docs/limitations.md'), 'utf8');
+    const rows = [...markdown.matchAll(/^\| `([A-Z_]+)` \| `([a-z]+)` \| (?:Yes|No) \|$/gm)];
+    const tableCodes = rows.map((match) => match[1]);
+    assert.equal(tableCodes.length, 14);
+    assert.deepEqual(
+      [...tableCodes].sort(),
+      Object.keys(AUTHORITY_REJECTIONS).sort(),
+    );
+    for (const [code, operation] of rows.map((match) => [match[1], match[2]])) {
+      assert.equal(AUTHORITY_REJECTIONS[code].operation, operation, `docs table operation drift for ${code}`);
+    }
+  });
+
+  it('every catalogue message is a non-empty string with a matching operation', () => {
+    for (const [code, rule] of Object.entries(AUTHORITY_REJECTIONS)) {
+      assert.equal(typeof rule.operation, 'string');
+      assert.ok(['lease', 'mutation', 'review'].includes(rule.operation));
+      const variants = Object.values(rule.messages);
+      assert.ok(variants.length >= 1);
+      for (const message of variants) {
+        assert.equal(typeof message, 'string');
+        assert.ok(message.length > 0);
+      }
+    }
   });
 });
 

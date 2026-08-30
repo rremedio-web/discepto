@@ -35,7 +35,7 @@ Discepto is a **synthetic protocol and replay reference only**.
 
 ## Authority rejection catch-rate table
 
-The protocol currently has fourteen stable authority rejection codes. The adversarial fixture exercises four; the watcher-adapter unit test enumerates all fourteen code/operation pairs. “No” means the code is not currently produced by `fixtures/adversarial-events.json`, not that the guard is untested.
+The protocol currently has fourteen stable authority rejection codes, owned by the `AUTHORITY_REJECTIONS` catalogue in `src/protocol.mjs`. This table and the watcher adapter both derive from that catalogue; a test fails if the table drifts. The adversarial fixture exercises four; the watcher-adapter unit test enumerates all fourteen code/operation pairs. "No" means the code is not currently produced by `fixtures/adversarial-events.json`, not that the guard is untested.
 
 | Code | Operation | Adversarial fixture |
 | --- | --- | --- |

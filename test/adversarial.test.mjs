@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import {
   deriveFreezeBinding,
   canonicalMeasurementHash,
+  AUTHORITY_REJECTIONS,
   replayEvents,
   snapshotState,
 } from '../src/protocol.mjs';
@@ -63,6 +64,19 @@ describe('adversarial trace', () => {
     assert.equal(snapWithout.freeze_binding, expected.freeze_binding);
     assert.equal(snapWith.freeze_binding, snapWithout.freeze_binding);
     assert.equal(snapWith.current_freeze_id, snapWithout.current_freeze_id);
+  });
+
+  it('expected fixture rejection records derive from the authority-rejection catalogue', () => {
+    const { expected } = loadAdversarialFixtures();
+    for (const rejection of expected.rejections) {
+      const rule = AUTHORITY_REJECTIONS[rejection.code];
+      assert.ok(rule, `fixture rejection ${rejection.code} missing from catalogue`);
+      assert.equal(rule.operation, rejection.operation);
+      assert.ok(
+        Object.values(rule.messages).includes(rejection.message),
+        `fixture message for ${rejection.code} is not a catalogue message`,
+      );
+    }
   });
 
   it('binding matches canonical digest for scenario measurement and mutation', () => {

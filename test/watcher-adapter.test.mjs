@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runAdversarialDemo } from '../src/adversarial-demo.mjs';
+import { AUTHORITY_REJECTIONS } from '../src/protocol.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const adapterPath = join(root, 'src/watcher-adapter.mjs');
@@ -15,22 +16,10 @@ const EXPECTED_CLASSIFICATION = {
   owner_decision: 'yes',
 };
 
-const ALL_REJECTION_PAIRS = [
-  ['LEASE_ISSUER_MISMATCH', 'lease'],
-  ['LEASE_WRITER_MISMATCH', 'lease'],
-  ['LEASE_INITIAL_INACTIVE', 'lease'],
-  ['LEASE_SCOPE_WIDENING', 'lease'],
-  ['MUTATION_CHALLENGER', 'mutation'],
-  ['MUTATION_NO_ACTIVE_LEASE', 'mutation'],
-  ['MUTATION_WRITER_MISMATCH', 'mutation'],
-  ['MUTATION_OUTSIDE_SCOPE', 'mutation'],
-  ['REVIEW_REVIEWER_MISMATCH', 'review'],
-  ['REVIEW_SAME_SEAT', 'review'],
-  ['REVIEW_SEAT_MISMATCH', 'review'],
-  ['REVIEW_NO_CURRENT_FREEZE', 'review'],
-  ['REVIEW_BINDING_MISMATCH', 'review'],
-  ['REVIEW_FREEZE_MISMATCH', 'review'],
-];
+// Derived from the protocol's authority-rejection catalogue; not a second copy.
+const ALL_REJECTION_PAIRS = Object.entries(AUTHORITY_REJECTIONS).map(
+  ([code, rule]) => [code, rule.operation],
+);
 
 const CONTEXT = {
   run_id: 'run-neutral-001',
@@ -47,7 +36,8 @@ function rejection(code, operation, message = 'display-only prose must not matte
 describe('watcher adapter', () => {
   it('all 14 code/operation pairs adapt and classify exactly', async () => {
     const { REJECTION_CODE_OPERATIONS, adaptAndClassify } = await import('../src/watcher-adapter.mjs');
-    assert.equal(Object.keys(REJECTION_CODE_OPERATIONS).length, 14);
+    assert.equal(Object.keys(AUTHORITY_REJECTIONS).length, 14);
+    assert.equal(Object.keys(REJECTION_CODE_OPERATIONS).length, Object.keys(AUTHORITY_REJECTIONS).length);
     for (const [code, operation] of ALL_REJECTION_PAIRS) {
       const result = adaptAndClassify(rejection(code, operation), CONTEXT);
       assert.equal(result.scenario.facts.authority_status, 'mismatch');

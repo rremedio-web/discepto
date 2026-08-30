@@ -14,6 +14,74 @@ import {
 
 export const PROTOCOL_VERSION = 'discepto-protocol-3';
 
+/**
+ * The single authority-rejection catalogue. Every code the protocol can emit
+ * is declared here with its operation and its message variants; the watcher
+ * adapter, the tests, the docs table, and the fixture expectations all derive
+ * from this table. Adding a code means adding one entry here.
+ */
+export const AUTHORITY_REJECTIONS = Object.freeze({
+  LEASE_ISSUER_MISMATCH: Object.freeze({
+    operation: 'lease',
+    messages: Object.freeze({
+      default: 'lease must be coordinator-issued',
+      first: 'first lease must be coordinator-issued',
+    }),
+  }),
+  LEASE_WRITER_MISMATCH: Object.freeze({
+    operation: 'lease',
+    messages: Object.freeze({ default: 'lease writer_id must match predesignated writer' }),
+  }),
+  LEASE_INITIAL_INACTIVE: Object.freeze({
+    operation: 'lease',
+    messages: Object.freeze({ default: 'first lease must be active' }),
+  }),
+  LEASE_SCOPE_WIDENING: Object.freeze({
+    operation: 'lease',
+    messages: Object.freeze({ default: 'lease scope widening rejected' }),
+  }),
+  MUTATION_CHALLENGER: Object.freeze({
+    operation: 'mutation',
+    messages: Object.freeze({ default: 'challenger mutation rejected' }),
+  }),
+  MUTATION_NO_ACTIVE_LEASE: Object.freeze({
+    operation: 'mutation',
+    messages: Object.freeze({ default: 'mutation rejected without active lease' }),
+  }),
+  MUTATION_WRITER_MISMATCH: Object.freeze({
+    operation: 'mutation',
+    messages: Object.freeze({ default: 'mutation writer_id mismatch' }),
+  }),
+  MUTATION_OUTSIDE_SCOPE: Object.freeze({
+    operation: 'mutation',
+    messages: Object.freeze({ default: 'mutation path outside lease scope' }),
+  }),
+  REVIEW_REVIEWER_MISMATCH: Object.freeze({
+    operation: 'review',
+    messages: Object.freeze({ default: 'reviewer must be challenger' }),
+  }),
+  REVIEW_SAME_SEAT: Object.freeze({
+    operation: 'review',
+    messages: Object.freeze({ default: 'reviewer and writer seats must differ' }),
+  }),
+  REVIEW_SEAT_MISMATCH: Object.freeze({
+    operation: 'review',
+    messages: Object.freeze({ default: 'reviewer seat must match registered challenger seat' }),
+  }),
+  REVIEW_NO_CURRENT_FREEZE: Object.freeze({
+    operation: 'review',
+    messages: Object.freeze({ default: 'review requires current freeze' }),
+  }),
+  REVIEW_BINDING_MISMATCH: Object.freeze({
+    operation: 'review',
+    messages: Object.freeze({ default: 'freeze_binding mismatch' }),
+  }),
+  REVIEW_FREEZE_MISMATCH: Object.freeze({
+    operation: 'review',
+    messages: Object.freeze({ default: 'review must reference current freeze' }),
+  }),
+});
+
 const PHASE_INDEX = Object.fromEntries(PHASES.map((phase, index) => [phase, index]));
 
 function sortObservations(observations) {
@@ -106,8 +174,13 @@ function fail(state, message) {
   return false;
 }
 
-function reject(state, code, operation, message) {
-  state.rejections.push({ code, operation, message });
+function reject(state, code, variant = 'default') {
+  const rule = AUTHORITY_REJECTIONS[code];
+  const message = rule?.messages[variant];
+  if (rule === undefined || message === undefined) {
+    throw new Error(`uncatalogued rejection: ${code} (${variant})`);
+  }
+  state.rejections.push({ code, operation: rule.operation, message });
   return false;
 }
 
@@ -199,13 +272,13 @@ export function applyLease(state, lease) {
   if (isFirstLease) {
     if (!requirePhase(state, 'MEASURE')) return false;
     if (lease.issuer_id !== state.coordinatorId) {
-      return reject(state, 'LEASE_ISSUER_MISMATCH', 'lease', 'first lease must be coordinator-issued');
+      return reject(state, 'LEASE_ISSUER_MISMATCH', 'first');
     }
     if (lease.writer_id !== state.writerId) {
-      return reject(state, 'LEASE_WRITER_MISMATCH', 'lease', 'lease writer_id must match predesignated writer');
+      return reject(state, 'LEASE_WRITER_MISMATCH');
     }
     if (!lease.active) {
-      return reject(state, 'LEASE_INITIAL_INACTIVE', 'lease', 'first lease must be active');
+      return reject(state, 'LEASE_INITIAL_INACTIVE');
     }
     state.lease = copyLease(lease);
     advancePhase(state, 'IMPLEMENT');
@@ -216,13 +289,13 @@ export function applyLease(state, lease) {
     return fail(state, 'lease not allowed in current phase');
   }
   if (lease.issuer_id !== state.coordinatorId) {
-    return reject(state, 'LEASE_ISSUER_MISMATCH', 'lease', 'lease must be coordinator-issued');
+    return reject(state, 'LEASE_ISSUER_MISMATCH');
   }
   if (lease.writer_id !== state.writerId) {
-    return reject(state, 'LEASE_WRITER_MISMATCH', 'lease', 'lease writer_id must match predesignated writer');
+    return reject(state, 'LEASE_WRITER_MISMATCH');
   }
   if (!scopeSubset(lease.scope, state.lease.scope)) {
-    return reject(state, 'LEASE_SCOPE_WIDENING', 'lease', 'lease scope widening rejected');
+    return reject(state, 'LEASE_SCOPE_WIDENING');
   }
 
   state.lease = copyLease(lease);
@@ -240,17 +313,17 @@ export function applyMutation(state, mutation) {
   }
 
   const role = agentRole(state, agentId);
-  if (role === 'challenger') return reject(state, 'MUTATION_CHALLENGER', 'mutation', 'challenger mutation rejected');
+  if (role === 'challenger') return reject(state, 'MUTATION_CHALLENGER');
   if (role !== 'writer') return fail(state, 'mutation agent_id not in run');
 
   if (!state.lease || !state.lease.active) {
-    return reject(state, 'MUTATION_NO_ACTIVE_LEASE', 'mutation', 'mutation rejected without active lease');
+    return reject(state, 'MUTATION_NO_ACTIVE_LEASE');
   }
   if (state.lease.writer_id !== agentId) {
-    return reject(state, 'MUTATION_WRITER_MISMATCH', 'mutation', 'mutation writer_id mismatch');
+    return reject(state, 'MUTATION_WRITER_MISMATCH');
   }
   if (!state.lease.scope.includes(path)) {
-    return reject(state, 'MUTATION_OUTSIDE_SCOPE', 'mutation', 'mutation path outside lease scope');
+    return reject(state, 'MUTATION_OUTSIDE_SCOPE');
   }
 
   state.mutations.push({ agent_id: agentId, path });
@@ -293,18 +366,18 @@ export function applyFreeze(state, freeze) {
 
 function validateReviewAuthority(state, review) {
   if (review.reviewer_id !== state.challengerId) {
-    return reject(state, 'REVIEW_REVIEWER_MISMATCH', 'review', 'reviewer must be challenger');
+    return reject(state, 'REVIEW_REVIEWER_MISMATCH');
   }
   if (review.seat_id === state.writerSeatId) {
-    return reject(state, 'REVIEW_SAME_SEAT', 'review', 'reviewer and writer seats must differ');
+    return reject(state, 'REVIEW_SAME_SEAT');
   }
   if (review.seat_id !== state.challengerSeatId) {
-    return reject(state, 'REVIEW_SEAT_MISMATCH', 'review', 'reviewer seat must match registered challenger seat');
+    return reject(state, 'REVIEW_SEAT_MISMATCH');
   }
   const freeze = currentFreeze(state);
-  if (!freeze) return reject(state, 'REVIEW_NO_CURRENT_FREEZE', 'review', 'review requires current freeze');
+  if (!freeze) return reject(state, 'REVIEW_NO_CURRENT_FREEZE');
   if (review.freeze_binding !== freeze.binding) {
-    return reject(state, 'REVIEW_BINDING_MISMATCH', 'review', 'freeze_binding mismatch');
+    return reject(state, 'REVIEW_BINDING_MISMATCH');
   }
   return true;
 }
@@ -313,9 +386,9 @@ export function applyReview(state, review) {
   const result = validateReview(review);
   if (!result.ok) return fail(state, result.error);
   if (!requirePhase(state, 'REVIEW')) return false;
-  if (!state.currentFreezeId) return reject(state, 'REVIEW_NO_CURRENT_FREEZE', 'review', 'review requires current freeze');
+  if (!state.currentFreezeId) return reject(state, 'REVIEW_NO_CURRENT_FREEZE');
   if (review.freeze_id !== state.currentFreezeId) {
-    return reject(state, 'REVIEW_FREEZE_MISMATCH', 'review', 'review must reference current freeze');
+    return reject(state, 'REVIEW_FREEZE_MISMATCH');
   }
   if (!validateReviewAuthority(state, review)) return false;
 
