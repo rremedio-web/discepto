@@ -42,3 +42,5 @@ Fixtures use generic uppercase tokens and neutral CSS property names. No private
 ## Release
 
 Structural release uses hardened Git archive isolation (fsmonitor disabled, config cleared), untracked-clean guard, dual deterministic zip builds, and `discepto.zip` + `receipt.json` output with atomic sibling rename. The release checker enforces a tight file-type allowlist, strict UTF-8 and NUL handling, and credential-pattern scans without embedding secrets in public files.
+
+Release-review deletion scope derives only from the deletion-only diff: `git diff --name-only --diff-filter=D <base> <head>` defines the complete set of removed paths, and nothing outside that output counts as deleted. Reference matching against that set uses full relative paths with component boundaries; basename or suffix matching is forbidden because it reports unrelated files as deletions.
