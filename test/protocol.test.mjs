@@ -15,7 +15,9 @@ import {
   PROTOCOL_VERSION,
   replayEvents,
   snapshotState,
+  EVENT_APPLIERS,
 } from '../src/protocol.mjs';
+import { EVENT_VALIDATORS } from '../src/schema.mjs';
 
 const baseRun = {
   id: 'run-protocol',
@@ -893,5 +895,65 @@ describe('replay integration', () => {
     ]);
     assert.ok(stopped.errors.length > 0);
     assert.notEqual(stopped.phase, 'FINAL');
+  });
+});
+
+describe('event vocabulary', () => {
+  it('every event type has exactly one validator and one applier', () => {
+    assert.deepEqual(
+      Object.keys(EVENT_APPLIERS).sort(),
+      Object.keys(EVENT_VALIDATORS).sort(),
+    );
+  });
+
+  it('replay treats an unknown event type as fatal', () => {
+    const state = replayEvents(baseRun, [
+      { type: 'diagnosis', diagnosis: { agent_id: 'writer-1', read_only: true, findings: ['a'] } },
+      { type: 'sabotage', sabotage: { agent_id: 'writer-1' } },
+    ]);
+    const snap = snapshotState(state);
+    assert.equal(snap.errors.length, 1);
+    assert.match(snap.errors[0], /unknown event type: sabotage/);
+    assert.equal(snap.diagnosis_count, 1);
+    assert.equal(snap.phase, 'DIAGNOSE');
+  });
+});
+
+describe('replay lifecycle surface', () => {
+  it('lifecycle with nonfatal rejections reaches FINAL, observed only through snapshotState', () => {
+    const freezeA = freezeRequest('freeze-snap');
+    const events = [
+      { type: 'diagnosis', diagnosis: { agent_id: 'writer-1', read_only: true, findings: ['a'] } },
+      { type: 'diagnosis', diagnosis: { agent_id: 'challenger-1', read_only: true, findings: ['b'] } },
+      { type: 'dispute', dispute: { agent_id: 'writer-1', claim: 'c1', estimate: 'e1' } },
+      { type: 'dispute', dispute: { agent_id: 'challenger-1', claim: 'c2', estimate: 'e2' } },
+      { type: 'measurement', measurement },
+      { type: 'lease', lease: { issuer_id: 'coordinator-1', writer_id: 'writer-1', scope: ['src/a.mjs'], active: true } },
+      { type: 'mutation', mutation: { agent_id: 'challenger-1', path: 'src/a.mjs' } },
+      { type: 'mutation', mutation: { agent_id: 'writer-1', path: 'src/a.mjs' } },
+      { type: 'freeze', freeze: freezeA },
+      { type: 'review', review: {
+        reviewer_id: 'challenger-1',
+        seat_id: 'challenger-seat',
+        freeze_id: 'freeze-snap',
+        freeze_binding: deriveFreezeBinding(
+          baseRun,
+          freezeA,
+          ['src/a.mjs'],
+          canonicalMeasurementHash(measurement),
+        ),
+        verdict: 'PASS',
+        findings: [],
+      } },
+    ];
+    const snap = snapshotState(replayEvents(baseRun, events));
+    assert.equal(snap.errors.length, 0);
+    assert.equal(snap.phase, 'FINAL');
+    assert.equal(snap.final, true);
+    assert.equal(snap.rejection_count, 1);
+    assert.equal(snap.rejections[0].code, 'MUTATION_CHALLENGER');
+    assert.equal(snap.rejections[0].operation, 'mutation');
+    assert.equal(snap.mutation_count, 1);
+    assert.equal(snap.current_freeze_id, 'freeze-snap');
   });
 });

@@ -1,17 +1,6 @@
-import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import {
-  validateRun,
-  validateDiagnosis,
-  validateLease,
-  validateMeasurement,
-  validateFreeze,
-  validateReview,
-  validateCorrection,
-  validateDispute,
-  validateMutation,
-} from './schema.mjs';
+import { validateRun } from './schema.mjs';
 import { replayEvents, snapshotState } from './protocol.mjs';
 import { loadFixtures } from './replay.mjs';
 
@@ -28,37 +17,6 @@ const { scenario, events, expected } = loadFixtures();
 
 const runResult = validateRun(scenario.run);
 if (!runResult.ok) report(`invalid run: ${runResult.error}`);
-
-for (const event of events) {
-  switch (event.type) {
-    case 'diagnosis':
-      if (!validateDiagnosis(event.diagnosis).ok) report('invalid diagnosis in events');
-      break;
-    case 'dispute':
-      if (!validateDispute(event.dispute).ok) report('invalid dispute in events');
-      break;
-    case 'measurement':
-      if (!validateMeasurement(event.measurement).ok) report('invalid measurement in events');
-      break;
-    case 'lease':
-      if (!validateLease(event.lease).ok) report('invalid lease in events');
-      break;
-    case 'mutation':
-      if (!validateMutation(event.mutation).ok) report('invalid mutation in events');
-      break;
-    case 'freeze':
-      if (!validateFreeze(event.freeze).ok) report('invalid freeze in events');
-      break;
-    case 'review':
-      if (!validateReview(event.review).ok) report('invalid review in events');
-      break;
-    case 'correction':
-      if (!validateCorrection(event.correction).ok) report('invalid correction in events');
-      break;
-    default:
-      break;
-  }
-}
 
 const state = replayEvents(scenario.run, events);
 const snapshot = snapshotState(state);

@@ -11,6 +11,7 @@ import {
   validateMutation,
   PHASES,
 } from './schema.mjs';
+import { rejectionOperation } from './rejections.mjs';
 
 export const PROTOCOL_VERSION = 'discepto-protocol-3';
 
@@ -106,8 +107,8 @@ function fail(state, message) {
   return false;
 }
 
-function reject(state, code, operation, message) {
-  state.rejections.push({ code, operation, message });
+function reject(state, code, message) {
+  state.rejections.push({ code, operation: rejectionOperation(code), message });
   return false;
 }
 
@@ -199,13 +200,13 @@ export function applyLease(state, lease) {
   if (isFirstLease) {
     if (!requirePhase(state, 'MEASURE')) return false;
     if (lease.issuer_id !== state.coordinatorId) {
-      return reject(state, 'LEASE_ISSUER_MISMATCH', 'lease', 'first lease must be coordinator-issued');
+      return reject(state, 'LEASE_ISSUER_MISMATCH', 'first lease must be coordinator-issued');
     }
     if (lease.writer_id !== state.writerId) {
-      return reject(state, 'LEASE_WRITER_MISMATCH', 'lease', 'lease writer_id must match predesignated writer');
+      return reject(state, 'LEASE_WRITER_MISMATCH', 'lease writer_id must match predesignated writer');
     }
     if (!lease.active) {
-      return reject(state, 'LEASE_INITIAL_INACTIVE', 'lease', 'first lease must be active');
+      return reject(state, 'LEASE_INITIAL_INACTIVE', 'first lease must be active');
     }
     state.lease = copyLease(lease);
     advancePhase(state, 'IMPLEMENT');
@@ -216,13 +217,13 @@ export function applyLease(state, lease) {
     return fail(state, 'lease not allowed in current phase');
   }
   if (lease.issuer_id !== state.coordinatorId) {
-    return reject(state, 'LEASE_ISSUER_MISMATCH', 'lease', 'lease must be coordinator-issued');
+    return reject(state, 'LEASE_ISSUER_MISMATCH', 'lease must be coordinator-issued');
   }
   if (lease.writer_id !== state.writerId) {
-    return reject(state, 'LEASE_WRITER_MISMATCH', 'lease', 'lease writer_id must match predesignated writer');
+    return reject(state, 'LEASE_WRITER_MISMATCH', 'lease writer_id must match predesignated writer');
   }
   if (!scopeSubset(lease.scope, state.lease.scope)) {
-    return reject(state, 'LEASE_SCOPE_WIDENING', 'lease', 'lease scope widening rejected');
+    return reject(state, 'LEASE_SCOPE_WIDENING', 'lease scope widening rejected');
   }
 
   state.lease = copyLease(lease);
@@ -240,17 +241,17 @@ export function applyMutation(state, mutation) {
   }
 
   const role = agentRole(state, agentId);
-  if (role === 'challenger') return reject(state, 'MUTATION_CHALLENGER', 'mutation', 'challenger mutation rejected');
+  if (role === 'challenger') return reject(state, 'MUTATION_CHALLENGER', 'challenger mutation rejected');
   if (role !== 'writer') return fail(state, 'mutation agent_id not in run');
 
   if (!state.lease || !state.lease.active) {
-    return reject(state, 'MUTATION_NO_ACTIVE_LEASE', 'mutation', 'mutation rejected without active lease');
+    return reject(state, 'MUTATION_NO_ACTIVE_LEASE', 'mutation rejected without active lease');
   }
   if (state.lease.writer_id !== agentId) {
-    return reject(state, 'MUTATION_WRITER_MISMATCH', 'mutation', 'mutation writer_id mismatch');
+    return reject(state, 'MUTATION_WRITER_MISMATCH', 'mutation writer_id mismatch');
   }
   if (!state.lease.scope.includes(path)) {
-    return reject(state, 'MUTATION_OUTSIDE_SCOPE', 'mutation', 'mutation path outside lease scope');
+    return reject(state, 'MUTATION_OUTSIDE_SCOPE', 'mutation path outside lease scope');
   }
 
   state.mutations.push({ agent_id: agentId, path });
@@ -293,18 +294,18 @@ export function applyFreeze(state, freeze) {
 
 function validateReviewAuthority(state, review) {
   if (review.reviewer_id !== state.challengerId) {
-    return reject(state, 'REVIEW_REVIEWER_MISMATCH', 'review', 'reviewer must be challenger');
+    return reject(state, 'REVIEW_REVIEWER_MISMATCH', 'reviewer must be challenger');
   }
   if (review.seat_id === state.writerSeatId) {
-    return reject(state, 'REVIEW_SAME_SEAT', 'review', 'reviewer and writer seats must differ');
+    return reject(state, 'REVIEW_SAME_SEAT', 'reviewer and writer seats must differ');
   }
   if (review.seat_id !== state.challengerSeatId) {
-    return reject(state, 'REVIEW_SEAT_MISMATCH', 'review', 'reviewer seat must match registered challenger seat');
+    return reject(state, 'REVIEW_SEAT_MISMATCH', 'reviewer seat must match registered challenger seat');
   }
   const freeze = currentFreeze(state);
-  if (!freeze) return reject(state, 'REVIEW_NO_CURRENT_FREEZE', 'review', 'review requires current freeze');
+  if (!freeze) return reject(state, 'REVIEW_NO_CURRENT_FREEZE', 'review requires current freeze');
   if (review.freeze_binding !== freeze.binding) {
-    return reject(state, 'REVIEW_BINDING_MISMATCH', 'review', 'freeze_binding mismatch');
+    return reject(state, 'REVIEW_BINDING_MISMATCH', 'freeze_binding mismatch');
   }
   return true;
 }
@@ -313,9 +314,9 @@ export function applyReview(state, review) {
   const result = validateReview(review);
   if (!result.ok) return fail(state, result.error);
   if (!requirePhase(state, 'REVIEW')) return false;
-  if (!state.currentFreezeId) return reject(state, 'REVIEW_NO_CURRENT_FREEZE', 'review', 'review requires current freeze');
+  if (!state.currentFreezeId) return reject(state, 'REVIEW_NO_CURRENT_FREEZE', 'review requires current freeze');
   if (review.freeze_id !== state.currentFreezeId) {
-    return reject(state, 'REVIEW_FREEZE_MISMATCH', 'review', 'review must reference current freeze');
+    return reject(state, 'REVIEW_FREEZE_MISMATCH', 'review must reference current freeze');
   }
   if (!validateReviewAuthority(state, review)) return false;
 
@@ -380,6 +381,17 @@ export function snapshotState(state) {
   };
 }
 
+export const EVENT_APPLIERS = Object.freeze({
+  diagnosis: applyDiagnosis,
+  dispute: applyDispute,
+  measurement: applyMeasurement,
+  lease: applyLease,
+  mutation: applyMutation,
+  freeze: applyFreeze,
+  review: applyReview,
+  correction: applyCorrection,
+});
+
 export function replayEvents(run, events) {
   const state = createInitialState(run);
 
@@ -389,34 +401,12 @@ export function replayEvents(run, events) {
       break;
     }
 
-    switch (event.type) {
-      case 'diagnosis':
-        applyDiagnosis(state, event.diagnosis);
-        break;
-      case 'dispute':
-        applyDispute(state, event.dispute);
-        break;
-      case 'measurement':
-        applyMeasurement(state, event.measurement);
-        break;
-      case 'lease':
-        applyLease(state, event.lease);
-        break;
-      case 'mutation':
-        applyMutation(state, event.mutation);
-        break;
-      case 'freeze':
-        applyFreeze(state, event.freeze);
-        break;
-      case 'review':
-        applyReview(state, event.review);
-        break;
-      case 'correction':
-        applyCorrection(state, event.correction);
-        break;
-      default:
-        fail(state, `unknown event type: ${event.type}`);
+    const applier = EVENT_APPLIERS[event.type];
+    if (!applier) {
+      fail(state, `unknown event type: ${event.type}`);
+      break;
     }
+    applier(state, event[event.type]);
 
     if (state.errors.length > 0) break;
   }

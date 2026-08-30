@@ -46,7 +46,8 @@ function rejection(code, operation, message = 'display-only prose must not matte
 
 describe('watcher adapter', () => {
   it('all 14 code/operation pairs adapt and classify exactly', async () => {
-    const { REJECTION_CODE_OPERATIONS, adaptAndClassify } = await import('../src/watcher-adapter.mjs');
+    const { REJECTION_CODE_OPERATIONS } = await import('../src/rejections.mjs');
+    const { adaptAndClassify } = await import('../src/watcher-adapter.mjs');
     assert.equal(Object.keys(REJECTION_CODE_OPERATIONS).length, 14);
     for (const [code, operation] of ALL_REJECTION_PAIRS) {
       const result = adaptAndClassify(rejection(code, operation), CONTEXT);
