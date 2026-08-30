@@ -34,22 +34,25 @@ function rejection(code, operation, message = 'display-only prose must not matte
 }
 
 describe('watcher adapter', () => {
-  it('all 14 code/operation pairs adapt and classify exactly', async () => {
-    const { REJECTION_CODE_OPERATIONS, adaptAndClassify } = await import('../src/watcher-adapter.mjs');
+  it('adapter interface is exactly one observation function plus the version constant', async () => {
+    const mod = await import('../src/watcher-adapter.mjs');
+    assert.deepEqual(Object.keys(mod).sort(), ['WATCHER_CALIBRATION_VERSION', 'observeRejection']);
+  });
+
+  it('all 14 code/operation pairs observe and classify exactly', async () => {
+    const { observeRejection } = await import('../src/watcher-adapter.mjs');
     assert.equal(Object.keys(AUTHORITY_REJECTIONS).length, 14);
-    assert.equal(Object.keys(REJECTION_CODE_OPERATIONS).length, Object.keys(AUTHORITY_REJECTIONS).length);
     for (const [code, operation] of ALL_REJECTION_PAIRS) {
-      const result = adaptAndClassify(rejection(code, operation), CONTEXT);
-      assert.equal(result.scenario.facts.authority_status, 'mismatch');
-      assert.equal(
-        result.scenario.facts.requested_action,
-        operation === 'review' ? 'read' : 'write',
-      );
+      const observation = observeRejection(rejection(code, operation), CONTEXT);
+      assert.equal(observation.rejection_code, code);
+      assert.equal(observation.operation, operation);
+      assert.match(observation.scenario_id, /^discepto-/);
+      assert.match(observation.evidence_ref, /^ev-discepto-/);
       assert.deepEqual(
         {
-          classification: result.classification,
-          disposition: result.disposition,
-          owner_decision: result.owner_decision,
+          classification: observation.classification,
+          disposition: observation.disposition,
+          owner_decision: observation.owner_decision,
         },
         EXPECTED_CLASSIFICATION,
         `unexpected classification for ${code}`,
@@ -58,88 +61,102 @@ describe('watcher adapter', () => {
   });
 
   it('unknown code and code/operation mismatch throw', async () => {
-    const { adaptRejection } = await import('../src/watcher-adapter.mjs');
+    const { observeRejection } = await import('../src/watcher-adapter.mjs');
     assert.throws(
-      () => adaptRejection(rejection('UNKNOWN_CODE', 'lease')),
+      () => observeRejection(rejection('UNKNOWN_CODE', 'lease')),
       (err) => /unknown rejection code/i.test(err.message),
     );
     assert.throws(
-      () => adaptRejection(rejection('LEASE_ISSUER_MISMATCH', 'mutation')),
+      () => observeRejection(rejection('LEASE_ISSUER_MISMATCH', 'mutation')),
       (err) => /code\/operation mismatch/i.test(err.message),
     );
   });
 
   it('same code with distinct sequences yields distinct deterministic scenario IDs and evidence refs', async () => {
-    const { adaptRejection } = await import('../src/watcher-adapter.mjs');
+    const { observeRejection } = await import('../src/watcher-adapter.mjs');
     const rejectionItem = rejection('MUTATION_CHALLENGER', 'mutation');
-    const first = adaptRejection(rejectionItem, { ...CONTEXT, sequence: 0 });
-    const second = adaptRejection(rejectionItem, { ...CONTEXT, sequence: 1 });
-    assert.notEqual(first.id, second.id);
-    assert.notEqual(first.evidence[0].ref, second.evidence[0].ref);
-    assert.equal(first.id, `discepto-${RUN_ID_SLUG}-0-mutation-challenger`);
-    assert.equal(second.id, `discepto-${RUN_ID_SLUG}-1-mutation-challenger`);
-    assert.equal(first.evidence[0].ref, `ev-discepto-${RUN_ID_SLUG}-0-mutation-challenger`);
-    assert.equal(second.evidence[0].ref, `ev-discepto-${RUN_ID_SLUG}-1-mutation-challenger`);
+    const first = observeRejection(rejectionItem, { ...CONTEXT, sequence: 0 });
+    const second = observeRejection(rejectionItem, { ...CONTEXT, sequence: 1 });
+    assert.notEqual(first.scenario_id, second.scenario_id);
+    assert.notEqual(first.evidence_ref, second.evidence_ref);
+    assert.equal(first.scenario_id, `discepto-${RUN_ID_SLUG}-0-mutation-challenger`);
+    assert.equal(second.scenario_id, `discepto-${RUN_ID_SLUG}-1-mutation-challenger`);
+    assert.equal(first.evidence_ref, `ev-discepto-${RUN_ID_SLUG}-0-mutation-challenger`);
+    assert.equal(second.evidence_ref, `ev-discepto-${RUN_ID_SLUG}-1-mutation-challenger`);
   });
 
   it('distinct run_id slugs that sanitize the same stay distinct via digest', async () => {
-    const { adaptRejection } = await import('../src/watcher-adapter.mjs');
+    const { observeRejection } = await import('../src/watcher-adapter.mjs');
     const rejectionItem = rejection('MUTATION_CHALLENGER', 'mutation');
-    const slash = adaptRejection(rejectionItem, { run_id: 'run/a', sequence: 0 });
-    const hyphen = adaptRejection(rejectionItem, { run_id: 'run-a', sequence: 0 });
-    assert.notEqual(slash.id, hyphen.id);
-    assert.notEqual(slash.evidence[0].ref, hyphen.evidence[0].ref);
+    const slash = observeRejection(rejectionItem, { run_id: 'run/a', sequence: 0 });
+    const hyphen = observeRejection(rejectionItem, { run_id: 'run-a', sequence: 0 });
+    assert.notEqual(slash.scenario_id, hyphen.scenario_id);
+    assert.notEqual(slash.evidence_ref, hyphen.evidence_ref);
   });
 
   it('distinct Unicode-only run_ids stay distinct', async () => {
-    const { adaptRejection } = await import('../src/watcher-adapter.mjs');
+    const { observeRejection } = await import('../src/watcher-adapter.mjs');
     const rejectionItem = rejection('MUTATION_CHALLENGER', 'mutation');
-    const rocket = adaptRejection(rejectionItem, { run_id: '🚀', sequence: 0 });
-    const star = adaptRejection(rejectionItem, { run_id: '★', sequence: 0 });
-    assert.notEqual(rocket.id, star.id);
-    assert.notEqual(rocket.evidence[0].ref, star.evidence[0].ref);
+    const rocket = observeRejection(rejectionItem, { run_id: '🚀', sequence: 0 });
+    const star = observeRejection(rejectionItem, { run_id: '★', sequence: 0 });
+    assert.notEqual(rocket.scenario_id, star.scenario_id);
+    assert.notEqual(rocket.evidence_ref, star.evidence_ref);
   });
 
   it('invalid context.run_id fails closed', async () => {
-    const { adaptRejection } = await import('../src/watcher-adapter.mjs');
+    const { observeRejection } = await import('../src/watcher-adapter.mjs');
     const rejectionItem = rejection('MUTATION_CHALLENGER', 'mutation');
     for (const run_id of ['', null, 0, 1.5, false, {}]) {
       assert.throws(
-        () => adaptRejection(rejectionItem, { run_id }),
+        () => observeRejection(rejectionItem, { run_id }),
         (err) => /run_id must be a non-empty string/i.test(err.message),
         `expected throw for run_id=${String(run_id)}`,
       );
     }
   });
 
-  it('same exact inputs produce byte-identical adapted output', async () => {
-    const { adaptAndClassify } = await import('../src/watcher-adapter.mjs');
+  it('same exact inputs produce byte-identical observations', async () => {
+    const { observeRejection } = await import('../src/watcher-adapter.mjs');
     const rejectionItem = rejection('MUTATION_CHALLENGER', 'mutation');
-    const first = adaptAndClassify(rejectionItem, CONTEXT);
-    const second = adaptAndClassify(rejectionItem, CONTEXT);
+    const first = observeRejection(rejectionItem, CONTEXT);
+    const second = observeRejection(rejectionItem, CONTEXT);
     assert.equal(JSON.stringify(first), JSON.stringify(second));
   });
 
   it('invalid context.sequence fails closed', async () => {
-    const { adaptRejection } = await import('../src/watcher-adapter.mjs');
+    const { observeRejection } = await import('../src/watcher-adapter.mjs');
     const rejectionItem = rejection('MUTATION_CHALLENGER', 'mutation');
     for (const sequence of [-1, 1.5, '0', null, undefined]) {
       if (sequence === undefined) continue;
       assert.throws(
-        () => adaptRejection(rejectionItem, { ...CONTEXT, sequence }),
+        () => observeRejection(rejectionItem, { ...CONTEXT, sequence }),
         (err) => /sequence must be a non-negative integer/i.test(err.message),
         `expected throw for sequence=${String(sequence)}`,
       );
     }
   });
 
-  it('changing only message produces byte-identical adapted scenario/classification', async () => {
-    const { adaptAndClassify } = await import('../src/watcher-adapter.mjs');
+  it('changing only message produces byte-identical observations', async () => {
+    const { observeRejection } = await import('../src/watcher-adapter.mjs');
     const base = rejection('MUTATION_CHALLENGER', 'mutation', 'first prose');
     const mutated = rejection('MUTATION_CHALLENGER', 'mutation', 'completely different prose');
-    const first = adaptAndClassify(base, CONTEXT);
-    const second = adaptAndClassify(mutated, CONTEXT);
+    const first = observeRejection(base, CONTEXT);
+    const second = observeRejection(mutated, CONTEXT);
     assert.equal(JSON.stringify(first), JSON.stringify(second));
+  });
+
+  it('observation carries exactly the seven watcher receipt fields', async () => {
+    const { observeRejection } = await import('../src/watcher-adapter.mjs');
+    const observation = observeRejection(rejection('MUTATION_CHALLENGER', 'mutation'), CONTEXT);
+    assert.deepEqual(Object.keys(observation), [
+      'rejection_code',
+      'operation',
+      'scenario_id',
+      'evidence_ref',
+      'classification',
+      'disposition',
+      'owner_decision',
+    ]);
   });
 
   it('source inspection confirms adapter does not access .message or parse message strings', () => {

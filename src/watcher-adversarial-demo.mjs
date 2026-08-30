@@ -1,7 +1,7 @@
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { runAdversarialDemo, sealReceipt } from './receipt.mjs';
-import { adaptAndClassify, WATCHER_CALIBRATION_VERSION } from './watcher-adapter.mjs';
+import { observeRejection, WATCHER_CALIBRATION_VERSION } from './watcher-adapter.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -12,21 +12,10 @@ export function buildWatcherAdversarialReceipt(adversarialOutput) {
     scope: output.fixture_id,
   };
 
-  const observations = output.rejections.map((item, index) => {
-    const adapted = adaptAndClassify(
-      { code: item.code, operation: item.operation },
-      { ...context, sequence: index },
-    );
-    return {
-      rejection_code: item.code,
-      operation: item.operation,
-      scenario_id: adapted.scenario.id,
-      evidence_ref: adapted.scenario.evidence[0].ref,
-      classification: adapted.classification,
-      disposition: adapted.disposition,
-      owner_decision: adapted.owner_decision,
-    };
-  });
+  const observations = output.rejections.map((item, index) => observeRejection(
+    { code: item.code, operation: item.operation },
+    { ...context, sequence: index },
+  ));
 
   const body = {
     watcher_calibration_version: WATCHER_CALIBRATION_VERSION,
