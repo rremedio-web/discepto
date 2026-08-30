@@ -59,3 +59,11 @@ describe('neutrality and no private vendor terms', () => {
     assert.ok(html.includes(scenario.sequence));
   });
 });
+
+describe('CI setup-node configuration', () => {
+  it('uses the cache-disable input instead of an unsupported cache manager', () => {
+    const workflow = readFileSync(join(root, '.github/workflows/ci.yml'), 'utf8');
+    assert.match(workflow, /^\s+package-manager-cache: false$/m);
+    assert.doesNotMatch(workflow, /^\s+cache: false$/m);
+  });
+});
