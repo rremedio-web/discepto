@@ -12,7 +12,7 @@ import {
   validateDispute,
   validateMutation,
 } from './schema.mjs';
-import { replayEvents, snapshotState } from './protocol.mjs';
+import { replayEvents } from './protocol.mjs';
 import { loadFixtures } from './replay.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -60,8 +60,7 @@ for (const event of events) {
   }
 }
 
-const state = replayEvents(scenario.run, events);
-const snapshot = snapshotState(state);
+const { snapshot } = replayEvents(scenario.run, events);
 
 if (snapshot.errors.length > 0) {
   report(`replay errors: ${snapshot.errors.join('; ')}`);
@@ -75,10 +74,9 @@ if (snapshot.final !== expected.final) {
   report(`final mismatch: expected ${expected.final}, got ${snapshot.final}`);
 }
 
-const freeze = state.freezes.find((item) => item.id === expected.freeze_id);
-if (!freeze) {
+if (snapshot.current_freeze_id !== expected.freeze_id) {
   report('expected freeze not found');
-} else if (freeze.binding !== expected.freeze_binding) {
+} else if (snapshot.freeze_binding !== expected.freeze_binding) {
   report('freeze binding mismatch');
 }
 

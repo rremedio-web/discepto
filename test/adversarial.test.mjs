@@ -8,7 +8,6 @@ import {
   canonicalMeasurementHash,
   AUTHORITY_REJECTIONS,
   replayEvents,
-  snapshotState,
 } from '../src/protocol.mjs';
 import {
   loadAdversarialFixtures,
@@ -36,10 +35,9 @@ function replayWithoutRejections(scenario, events) {
 describe('adversarial trace', () => {
   it('replays fixture to FINAL with exact ordered rejections', () => {
     const { scenario, events, expected } = loadAdversarialFixtures();
-    const state = replayEvents(scenario.run, events);
-    const snapshot = snapshotState(state);
+    const { snapshot } = replayEvents(scenario.run, events);
 
-    assert.equal(state.errors.length, 0);
+    assert.deepEqual(snapshot.errors, []);
     assert.equal(snapshot.phase, 'FINAL');
     assert.equal(snapshot.final, true);
     assert.equal(snapshot.current_freeze_id, expected.freeze_id);
@@ -53,13 +51,13 @@ describe('adversarial trace', () => {
     const withRejections = replayEvents(scenario.run, events);
     const withoutRejections = replayWithoutRejections(scenario, events);
 
-    assert.equal(withRejections.errors.length, 0);
-    assert.equal(withoutRejections.errors.length, 0);
-    assert.equal(withRejections.phase, 'FINAL');
-    assert.equal(withoutRejections.phase, 'FINAL');
+    assert.deepEqual(withRejections.snapshot.errors, []);
+    assert.deepEqual(withoutRejections.snapshot.errors, []);
+    assert.equal(withRejections.snapshot.phase, 'FINAL');
+    assert.equal(withoutRejections.snapshot.phase, 'FINAL');
 
-    const snapWith = snapshotState(withRejections);
-    const snapWithout = snapshotState(withoutRejections);
+    const snapWith = withRejections.snapshot;
+    const snapWithout = withoutRejections.snapshot;
     assert.equal(snapWith.freeze_binding, expected.freeze_binding);
     assert.equal(snapWithout.freeze_binding, expected.freeze_binding);
     assert.equal(snapWith.freeze_binding, snapWithout.freeze_binding);

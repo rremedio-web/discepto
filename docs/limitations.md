@@ -30,6 +30,7 @@ Discepto is a **synthetic protocol and replay reference only**.
 - Freeze IDs must be unique within a run
 - Mutations follow a strict schema; unknown fields are rejected
 - Fatal errors stop replay; nonfatal rejections are recorded and replay continues
+- `MUTATION_WRITER_MISMATCH` is kept as a fail-closed defence and documented unreachable (accepted leases always pin `writer_id` to the predesignated writer); the no-current-freeze review guards are kept as defences of the same kind. The catalogue still owns their codes and the watcher adapter still enumerates them.
 - Release tooling validates structure, file types, UTF-8 integrity, and example-domain emails — not semantic correctness
 - CI pins action SHAs and Node 22; local environments may differ slightly in Playwright engine builds
 

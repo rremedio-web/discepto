@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
-import { replayEvents, snapshotState, PROTOCOL_VERSION } from './protocol.mjs';
+import { replayEvents, PROTOCOL_VERSION } from './protocol.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -54,11 +54,10 @@ export function buildAdversarialReceipt(scenario, snapshot, expected) {
 
 export function runAdversarialDemo(baseDir = root) {
   const { scenario, events, expected } = loadAdversarialFixtures(baseDir);
-  const state = replayEvents(scenario.run, events);
-  const snapshot = snapshotState(state);
+  const { snapshot } = replayEvents(scenario.run, events);
   const output = buildAdversarialReceipt(scenario, snapshot, expected);
   const allMatch = Object.values(output.expected_match).every(Boolean);
-  return { state, output, expected, allMatch };
+  return { snapshot, output, expected, allMatch };
 }
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;

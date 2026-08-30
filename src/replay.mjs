@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
-import { replayEvents, snapshotState } from './protocol.mjs';
+import { replayEvents } from './protocol.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -14,9 +14,8 @@ export function loadFixtures(baseDir = root) {
 
 export function runReplay(baseDir = root) {
   const { scenario, events, expected } = loadFixtures(baseDir);
-  const state = replayEvents(scenario.run, events);
+  const { snapshot } = replayEvents(scenario.run, events);
 
-  const snapshot = snapshotState(state);
   const output = {
     run_id: scenario.run.id,
     phase: snapshot.phase,
@@ -34,7 +33,7 @@ export function runReplay(baseDir = root) {
     },
   };
 
-  return { state, output, expected };
+  return { snapshot, output, expected };
 }
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
