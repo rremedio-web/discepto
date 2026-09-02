@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { sha256Canonical } from './canonical.mjs';
-import { replayEvents, snapshotState, PROTOCOL_VERSION } from './protocol.mjs';
+import { replayEvents, PROTOCOL_VERSION } from './protocol.mjs';
 import { validateScenario, validateEvents } from './schema.mjs';
 
 export const USAGE =
@@ -108,8 +108,7 @@ export function replayFromFiles({ scenarioPath, eventsPath, expectedPath }) {
     throw new Error(`invalid events: ${eventsResult.error}`);
   }
 
-  const state = replayEvents(scenario.run, events);
-  const snapshot = snapshotState(state);
+  const { snapshot } = replayEvents(scenario.run, events);
   const body = {
     protocol_version: PROTOCOL_VERSION,
     run_id: scenario.run.id,

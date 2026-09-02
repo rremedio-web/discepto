@@ -138,12 +138,14 @@ An optional experiment in [`experiments/watcher/`](experiments/watcher/) maps st
 
 ## Layout
 
-- `src/protocol.mjs` — phase authority, lease rules, trace binding
+- `src/protocol.mjs` — phase authority, lease rules, trace binding, authority-rejection catalogue
 - `src/schema.mjs` — structure and enum validation
 - `src/canonical.mjs` — canonical JSON and SHA-256 helpers
+- `src/receipt.mjs` — fixture load, replay, expected match, sealed receipt hash
 - `src/cli.mjs` / `bin/discepto.mjs` — path-based replay CLI
-- `src/replay.mjs` / `src/demo.mjs` — bundled-fixture helpers
+- `src/replay.mjs` — bundled-fixture replay to stdout
 - `src/adversarial-demo.mjs` — adversarial receipt to stdout
+- `src/validate.mjs` — fixture and neutrality checks
 - `fixtures/` — synthetic scenario, events, expected state, adversarial trace
 - `examples/` — documented CLI inputs (happy-path copies of the bundled fixtures)
 - `playwright/` — neutral HTML fixture and cross-engine measurement spec

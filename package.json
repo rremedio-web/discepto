@@ -14,7 +14,7 @@
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "validate": "node src/validate.mjs",
-    "demo": "node src/demo.mjs",
+    "demo": "node src/replay.mjs",
     "replay": "node bin/discepto.mjs replay --scenario fixtures/scenario.json --events fixtures/events.json --expected fixtures/expected.json --pretty",
     "demo:adversarial": "node src/adversarial-demo.mjs",
     "validate:watcher": "node experiments/watcher/validate.mjs",

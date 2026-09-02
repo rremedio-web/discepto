@@ -13,9 +13,9 @@ async function measure(page, variant, width) {
 
   return page.evaluate(() => {
     const seq = document.querySelector('[data-testid="seq-a"]');
-    const token = seq.querySelector('.seq-token') ?? seq;
+    const seqToken = seq.querySelector('.seq-token') ?? seq;
     const range = document.createRange();
-    range.selectNodeContents(token);
+    range.selectNodeContents(seqToken);
     const lineCount = Math.max(1, range.getClientRects().length);
     const overflowX = Math.max(0, document.documentElement.scrollWidth - window.innerWidth);
     const overflowY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);

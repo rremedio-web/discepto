@@ -1,6 +1,4 @@
-import { validateRun } from './schema.mjs';
-import { replayEvents, snapshotState } from './protocol.mjs';
-import { loadFixtures } from './replay.mjs';
+import { runReplay } from './receipt.mjs';
 
 let errors = 0;
 
@@ -9,30 +7,23 @@ function report(message) {
   errors += 1;
 }
 
-const { scenario, events, expected } = loadFixtures();
-
-const runResult = validateRun(scenario.run);
-if (!runResult.ok) report(`invalid run: ${runResult.error}`);
-
-const state = replayEvents(scenario.run, events);
-const snapshot = snapshotState(state);
+const { snapshot, expected, match } = runReplay();
 
 if (snapshot.errors.length > 0) {
   report(`replay errors: ${snapshot.errors.join('; ')}`);
 }
 
-if (snapshot.phase !== expected.phase) {
+if (!match.phase) {
   report(`phase mismatch: expected ${expected.phase}, got ${snapshot.phase}`);
 }
 
-if (snapshot.final !== expected.final) {
+if (!match.final) {
   report(`final mismatch: expected ${expected.final}, got ${snapshot.final}`);
 }
 
-const freeze = state.freezes.find((item) => item.id === expected.freeze_id);
-if (!freeze) {
+if (snapshot.current_freeze_id !== expected.freeze_id) {
   report('expected freeze not found');
-} else if (freeze.binding !== expected.freeze_binding) {
+} else if (!match.freeze_binding) {
   report('freeze binding mismatch');
 }
 

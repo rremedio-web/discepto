@@ -6,12 +6,16 @@ import { fileURLToPath } from 'node:url';
 import {
   deriveFreezeBinding,
   canonicalMeasurementHash,
+  AUTHORITY_REJECTIONS,
   replayEvents,
-  snapshotState,
 } from '../src/protocol.mjs';
-import { loadAdversarialFixtures, runAdversarialDemo } from '../src/adversarial-demo.mjs';
+import { loadFixtureSet, runAdversarialDemo } from '../src/receipt.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+
+function loadAdversarialFixtures() {
+  return loadFixtureSet('adversarial-events.json', 'adversarial-expected.json');
+}
 
 function replayWithoutRejections(scenario, events) {
   const filtered = events.filter((event) => {
@@ -32,10 +36,9 @@ function replayWithoutRejections(scenario, events) {
 describe('adversarial trace', () => {
   it('replays fixture to FINAL with exact ordered rejections', () => {
     const { scenario, events, expected } = loadAdversarialFixtures();
-    const state = replayEvents(scenario.run, events);
-    const snapshot = snapshotState(state);
+    const { snapshot } = replayEvents(scenario.run, events);
 
-    assert.equal(state.errors.length, 0);
+    assert.deepEqual(snapshot.errors, []);
     assert.equal(snapshot.phase, 'FINAL');
     assert.equal(snapshot.final, true);
     assert.equal(snapshot.current_freeze_id, expected.freeze_id);
@@ -49,17 +52,30 @@ describe('adversarial trace', () => {
     const withRejections = replayEvents(scenario.run, events);
     const withoutRejections = replayWithoutRejections(scenario, events);
 
-    assert.equal(withRejections.errors.length, 0);
-    assert.equal(withoutRejections.errors.length, 0);
-    assert.equal(withRejections.phase, 'FINAL');
-    assert.equal(withoutRejections.phase, 'FINAL');
+    assert.deepEqual(withRejections.snapshot.errors, []);
+    assert.deepEqual(withoutRejections.snapshot.errors, []);
+    assert.equal(withRejections.snapshot.phase, 'FINAL');
+    assert.equal(withoutRejections.snapshot.phase, 'FINAL');
 
-    const snapWith = snapshotState(withRejections);
-    const snapWithout = snapshotState(withoutRejections);
+    const snapWith = withRejections.snapshot;
+    const snapWithout = withoutRejections.snapshot;
     assert.equal(snapWith.freeze_binding, expected.freeze_binding);
     assert.equal(snapWithout.freeze_binding, expected.freeze_binding);
     assert.equal(snapWith.freeze_binding, snapWithout.freeze_binding);
     assert.equal(snapWith.current_freeze_id, snapWithout.current_freeze_id);
+  });
+
+  it('expected fixture rejection records derive from the authority-rejection catalogue', () => {
+    const { expected } = loadAdversarialFixtures();
+    for (const rejection of expected.rejections) {
+      const rule = AUTHORITY_REJECTIONS[rejection.code];
+      assert.ok(rule, `fixture rejection ${rejection.code} missing from catalogue`);
+      assert.equal(rule.operation, rejection.operation);
+      assert.ok(
+        Object.values(rule.messages).includes(rejection.message),
+        `fixture message for ${rejection.code} is not a catalogue message`,
+      );
+    }
   });
 
   it('binding matches canonical digest for scenario measurement and mutation', () => {

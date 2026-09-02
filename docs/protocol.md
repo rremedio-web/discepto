@@ -61,11 +61,22 @@ Unknown fields and invalid enums are rejected.
 - Declared review `seat_id` is required; it must match the registered challenger seat and a seat matching the writer seat is rejected (nonfatal)
 - `CHANGES_NEEDED` → one correction max → new freeze required with unique freeze ID
 - Second correction: fail closed (fatal)
+- `MUTATION_WRITER_MISMATCH` is retained as a fail-closed defence and is documented unreachable: lease rules already pin every accepted lease's `writer_id` to the predesignated writer, so no legal event sequence can produce it. The no-current-freeze review guards are defences of the same kind, because REVIEW is only reachable after a freeze set the current freeze. Kept guards stay; they are simply not reachable through replayed events.
 
 ## Fatal errors vs nonfatal rejections
 
 - **Fatal errors** — schema violations, wrong phase for structural events, duplicate measurements, replay stops immediately
 - **Nonfatal rejections** — authority failures (lease `issuer_id` mismatch, challenger mutation, binding mismatch, writer-label review mismatch, same-seat review) recorded in `rejections[]` as structured `{ code, operation, message }`; replay continues so rejected attempts do not alter accepted binding
+
+## Replay interface
+
+`replayEvents(run, events)` returns outcomes as values, not state to inspect: `{ snapshot, outcomes[] }`. Each outcome is one of:
+
+- `{ status: 'accepted' }`
+- `{ status: 'rejected', code, operation, message }` — the same record the snapshot's `rejections[]` carries
+- `{ status: 'fatal', message }` — replay stops after the first fatal outcome
+
+The mutable replay state is private to the protocol module; the snapshot plus the ordered outcome list are the only public results of a replay. Tests and fixtures author traces through this same seam.
 
 ## Trace binding
 
@@ -78,7 +89,7 @@ Freeze identity is a SHA-256 digest of Discepto canonical JSON over:
 - `base_id`
 - `candidate_id`
 - sorted recorded mutation paths (derived from applied mutations, not request fields)
-- canonical measurement digest (`method`, sorted observations, `result`, optional `artifact_identity`)
+- canonical measurement digest (`method`, sorted observations, `result`, and `artifact_identity` when present)
 
 Canonical JSON is whitespace-free. Object keys and observation pairs are sorted by UTF-16 code-unit order, not default-locale string comparison. Arrays keep their declared order. Strings, finite numbers, booleans, and null use `JSON.stringify` forms. Changing this encoding requires a protocol-version increment. The encoding is not a full RFC 8785 number-form implementation; Discepto hashes only JSON values it constructs.
 
@@ -92,4 +103,4 @@ The neutral scenario uses `fixtures/events.json`. The adversarial trace (`fixtur
 
 ## Optional watcher experiment
 
-See `experiments/watcher/`. An optional adapter maps structured authority rejections (`code` and `operation` only) into a deterministic ordered-rules classifier. It is a conformance exercise, not a trained model, blinded independent validation, production oversight, or real-world efficacy evaluation.
+See `experiments/watcher/`. `observeRejection(rejection, context)` maps structured authority rejections (`code` and `operation` only) into a deterministic ordered-rules classifier. It is a conformance exercise, not a trained model, blinded independent validation, production oversight, or real-world efficacy evaluation.
