@@ -66,6 +66,14 @@ Replaying `fixtures/adversarial-events.json` yields a deterministic receipt (tri
 }
 ```
 
+## Terminal demo
+
+A recorded walkthrough of that same adversarial fixture is in [`docs/terminal-demo.md`](docs/terminal-demo.md). It shows a self-issued lease rejected, a coordinator lease accepted, a valid freeze and challenger review, and the deterministic receipt.
+
+```bash
+node scripts/terminal-demo.mjs
+```
+
 ## How to run it
 
 Requires Node.js 22+.

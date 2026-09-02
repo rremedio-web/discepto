@@ -7,3 +7,4 @@
 - Playwright overflow evidence split into horizontal and vertical axes, checked at 320px, 375px, and 768px.
 - Watcher classifier moved to `experiments/watcher/` as an optional conformance exercise.
 - Lint, format, and coverage gates added to local `npm run check` and CI.
+- Recorded adversarial replay walkthrough (`docs/terminal-demo.md`, `node scripts/terminal-demo.mjs`).
