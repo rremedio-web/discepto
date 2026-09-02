@@ -4,37 +4,47 @@ import { dirname, join } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const fixtureBase = `file://${join(root, 'playwright/fixture.html')}`;
+const VIEWPORTS = [320, 375, 768];
 
-async function measure(page, variant) {
+async function measure(page, variant, width) {
   const url = variant === 'after' ? `${fixtureBase}?variant=after` : fixtureBase;
+  await page.setViewportSize({ width, height: 480 });
   await page.goto(url);
-  await page.setViewportSize({ width: 320, height: 480 });
 
   return page.evaluate(() => {
     const seq = document.querySelector('[data-testid="seq-a"]');
+    const seqEl = seq.querySelector('.seq-token') ?? seq;
     const range = document.createRange();
-    range.selectNodeContents(seq);
+    range.selectNodeContents(seqEl);
     const lineCount = Math.max(1, range.getClientRects().length);
     const overflowX = Math.max(0, document.documentElement.scrollWidth - window.innerWidth);
     const overflowY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
     return {
       seq_line_count: lineCount,
-      document_overflow_px: overflowX + overflowY,
+      overflow_x_px: overflowX,
+      overflow_y_px: overflowY,
       seq_width: seq.getBoundingClientRect().width,
     };
   });
 }
 
 test.describe('neutral fixture measurements', () => {
-  test('before variant shows intra-word split (RED)', async ({ page }) => {
-    const result = await measure(page, 'before');
-    expect(result.seq_line_count).toBeGreaterThan(1);
-    expect(result.document_overflow_px).toBeGreaterThan(0);
-  });
+  for (const width of VIEWPORTS) {
+    test(`before variant shows intra-word split and horizontal overflow at ${width}px (RED)`, async ({
+      page,
+    }) => {
+      const result = await measure(page, 'before', width);
+      expect(result.seq_line_count).toBeGreaterThan(1);
+      expect(result.overflow_x_px).toBeGreaterThan(0);
+      expect(result.overflow_y_px).toBe(0);
+    });
 
-  test('after variant shows single-line zero overflow (GREEN)', async ({ page }) => {
-    const result = await measure(page, 'after');
-    expect(result.seq_line_count).toBe(1);
-    expect(result.document_overflow_px).toBe(0);
-  });
+    test(`after variant shows single-line zero horizontal overflow at ${width}px (GREEN)`, async ({
+      page,
+    }) => {
+      const result = await measure(page, 'after', width);
+      expect(result.seq_line_count).toBe(1);
+      expect(result.overflow_x_px).toBe(0);
+    });
+  }
 });

@@ -1,7 +1,7 @@
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { sha256Canonical } from './canonical.mjs';
 import { replayEvents, PROTOCOL_VERSION } from './protocol.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -11,7 +11,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
  * append the digest. Every receipt (adversarial, watcher) is sealed here.
  */
 export function sealReceipt(body) {
-  const receipt_hash = createHash('sha256').update(JSON.stringify(body)).digest('hex');
+  const receipt_hash = sha256Canonical(body);
   return { ...body, receipt_hash };
 }
 
@@ -31,9 +31,9 @@ function rejectionsMatch(snapshot, expected) {
   if (snapshot.rejections.length !== expected.rejections.length) return false;
   return snapshot.rejections.every(
     (item, index) =>
-      item.code === expected.rejections[index].code
-      && item.operation === expected.rejections[index].operation
-      && item.message === expected.rejections[index].message,
+      item.code === expected.rejections[index].code &&
+      item.operation === expected.rejections[index].operation &&
+      item.message === expected.rejections[index].message,
   );
 }
 

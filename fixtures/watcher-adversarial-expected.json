@@ -1,8 +1,8 @@
 {
   "watcher_calibration_version": "watcher-calibration-1",
-  "source_protocol_version": "discepto-protocol-3",
+  "source_protocol_version": "discepto-protocol-4",
   "source_fixture_id": "adversarial-neutral-001",
-  "source_receipt_hash": "73e3b569cadb03f9e685baebb7219103b4e894ae715187d244bcfaaa2f66e224",
+  "source_receipt_hash": "ecaf204c1d55c8e9271483ab839e6e077a1721380ccd5ac48b7a44eb2b56f194",
   "observation_count": 4,
   "observations": [
     {
@@ -42,5 +42,5 @@
       "owner_decision": "yes"
     }
   ],
-  "receipt_hash": "0ad47c51e5171d2b396433dde19a354ab7dbcca4e4a14d0c58bc0bd9f0491f71"
+  "receipt_hash": "68b99903dc91b44f47f9c66eba9c89fe750d13316d066b93cf7404ee23a70827"
 }

@@ -11,10 +11,10 @@ Thank you for your interest in Discepto.
 ```bash
 npm ci --ignore-scripts
 npm audit --audit-level=high
-npm test
-npm run validate
+npm run check
 npm run demo
 npm run demo:adversarial
+npm run demo:watcher:adversarial
 npx playwright install --with-deps chromium firefox webkit
 npx playwright test
 bash scripts/release.sh --structural-only /tmp/discepto-structural-release

@@ -29,12 +29,13 @@ function ev(type, payload) {
   return { type, [type]: payload };
 }
 
-const diagnosisEv = (agentId, extra = {}) => ev('diagnosis', {
-  agent_id: agentId,
-  read_only: true,
-  findings: ['a'],
-  ...extra,
-});
+const diagnosisEv = (agentId, extra = {}) =>
+  ev('diagnosis', {
+    agent_id: agentId,
+    read_only: true,
+    findings: ['a'],
+    ...extra,
+  });
 const disputeEv = (agentId) => ev('dispute', { agent_id: agentId, claim: 'c1', estimate: 'e1' });
 const measurementEv = (m = measurement) => ev('measurement', m);
 const leaseEv = (issuerId, { writerId = 'writer-1', scope = ['src/a.mjs'], active = true } = {}) =>
@@ -47,7 +48,13 @@ const freezeEv = (id, baseId = 'base', candidateId = 'candidate') =>
 const correctionEv = (supersedes) =>
   ev('correction', { supersedes, red_ref: 'r', green_ref: 'g', count: 1 });
 
-function bindingFor(freezeId, changedPaths = ['src/a.mjs'], m = measurement, baseId = 'base', candidateId = 'candidate') {
+function bindingFor(
+  freezeId,
+  changedPaths = ['src/a.mjs'],
+  m = measurement,
+  baseId = 'base',
+  candidateId = 'candidate',
+) {
   return deriveFreezeBinding(
     baseRun,
     { id: freezeId, base_id: baseId, candidate_id: candidateId },
@@ -146,7 +153,10 @@ describe('protocol authority and phase invariants', () => {
   });
 
   it('inactive first lease stays in MEASURE', () => {
-    const result = replayEvents(baseRun, [...throughMeasurement, coordinatorLease({ active: false })]);
+    const result = replayEvents(baseRun, [
+      ...throughMeasurement,
+      coordinatorLease({ active: false }),
+    ]);
     assertRejected(result, 'LEASE_INITIAL_INACTIVE');
     assert.equal(result.snapshot.phase, 'MEASURE');
     assert.equal(result.snapshot.lease_active, false);
@@ -183,7 +193,10 @@ describe('protocol authority and phase invariants', () => {
   });
 
   it('rejects mutation outside lease scope as nonfatal rejection', () => {
-    const result = replayEvents(baseRun, [...throughFirstLease, mutationEv('writer-1', 'other.mjs')]);
+    const result = replayEvents(baseRun, [
+      ...throughFirstLease,
+      mutationEv('writer-1', 'other.mjs'),
+    ]);
     assertRejected(result, 'MUTATION_OUTSIDE_SCOPE');
     assert.deepEqual(result.snapshot.errors, []);
   });
@@ -196,12 +209,14 @@ describe('protocol authority and phase invariants', () => {
       mutationEv('writer-1', 'src/a.mjs'),
       mutationEv('writer-1', 'src/b.mjs'),
     ]);
-    assertAccepted(replayEvents(baseRun, [
-      ...throughMeasurement,
-      coordinatorLease({ scope: ['src/a.mjs', 'src/b.mjs'] }),
-      coordinatorLease({ scope: ['src/a.mjs'] }),
-      mutationEv('writer-1', 'src/a.mjs'),
-    ]));
+    assertAccepted(
+      replayEvents(baseRun, [
+        ...throughMeasurement,
+        coordinatorLease({ scope: ['src/a.mjs', 'src/b.mjs'] }),
+        coordinatorLease({ scope: ['src/a.mjs'] }),
+        mutationEv('writer-1', 'src/a.mjs'),
+      ]),
+    );
     assertRejected(result, 'MUTATION_OUTSIDE_SCOPE');
   });
 
@@ -302,7 +317,10 @@ describe('protocol authority and phase invariants', () => {
     assert.equal(canonicalMeasurementHash(reordered), hash);
     assert.notEqual(canonicalMeasurementHash(changed), hash);
     assert.notEqual(canonicalMeasurementHash(differentArtifact), hash);
-    assert.equal(canonicalMeasurementHash(reorderedArtifact), canonicalMeasurementHash(differentArtifact));
+    assert.equal(
+      canonicalMeasurementHash(reorderedArtifact),
+      canonicalMeasurementHash(differentArtifact),
+    );
   });
 
   it('produces canonical SHA-256 trace binding over protocol fields including coordinator_id', () => {
@@ -311,10 +329,29 @@ describe('protocol authority and phase invariants', () => {
     const binding = deriveFreezeBinding(baseRun, freeze, ['b.mjs', 'a.mjs'], mHash);
     assert.match(binding, /^[0-9a-f]{64}$/);
     assert.equal(binding, deriveFreezeBinding(baseRun, freeze, ['a.mjs', 'b.mjs'], mHash));
-    assert.notEqual(binding, deriveFreezeBinding({ ...baseRun, coordinator_id: 'other-coordinator' }, freeze, ['a.mjs', 'b.mjs'], mHash));
-    assert.notEqual(binding, deriveFreezeBinding(baseRun, { id: 'other', base_id: 'base-x', candidate_id: 'cand-x' }, ['a.mjs', 'b.mjs'], mHash));
+    assert.notEqual(
+      binding,
+      deriveFreezeBinding(
+        { ...baseRun, coordinator_id: 'other-coordinator' },
+        freeze,
+        ['a.mjs', 'b.mjs'],
+        mHash,
+      ),
+    );
+    assert.notEqual(
+      binding,
+      deriveFreezeBinding(
+        baseRun,
+        { id: 'other', base_id: 'base-x', candidate_id: 'cand-x' },
+        ['a.mjs', 'b.mjs'],
+        mHash,
+      ),
+    );
     assert.notEqual(binding, deriveFreezeBinding(baseRun, freeze, ['a.mjs'], mHash));
-    assert.notEqual(binding, deriveFreezeBinding(baseRun, freeze, ['a.mjs', 'b.mjs'], 'other-hash'));
+    assert.notEqual(
+      binding,
+      deriveFreezeBinding(baseRun, freeze, ['a.mjs', 'b.mjs'], 'other-hash'),
+    );
   });
 
   it('binding changes when mutation path or measurement changes', () => {
@@ -398,10 +435,7 @@ describe('protocol authority and phase invariants', () => {
   });
 
   it('CHANGES_NEEDED leads to CORRECT then requires new freeze', () => {
-    const result = replayEvents(baseRun, [
-      ...oneFreeze,
-      reviewEv({ verdict: 'CHANGES_NEEDED' }),
-    ]);
+    const result = replayEvents(baseRun, [...oneFreeze, reviewEv({ verdict: 'CHANGES_NEEDED' })]);
     assert.equal(result.snapshot.phase, 'CORRECT');
     assert.equal(result.snapshot.current_freeze_id, 'freeze-a');
   });
@@ -478,7 +512,10 @@ describe('stable structured nonfatal rejections', () => {
   });
 
   it('maps lease initial inactive', () => {
-    const result = replayEvents(baseRun, [...throughMeasurement, coordinatorLease({ active: false })]);
+    const result = replayEvents(baseRun, [
+      ...throughMeasurement,
+      coordinatorLease({ active: false }),
+    ]);
     assertRejected(result, 'LEASE_INITIAL_INACTIVE');
   });
 
@@ -505,7 +542,10 @@ describe('stable structured nonfatal rejections', () => {
   });
 
   it('maps mutation outside scope', () => {
-    const result = replayEvents(baseRun, [...throughFirstLease, mutationEv('writer-1', 'other.mjs')]);
+    const result = replayEvents(baseRun, [
+      ...throughFirstLease,
+      mutationEv('writer-1', 'other.mjs'),
+    ]);
     assertRejected(result, 'MUTATION_OUTSIDE_SCOPE');
   });
 
@@ -635,8 +675,8 @@ describe('reproduced attack rejection', () => {
     assert.deepEqual(result.snapshot.errors, []);
   });
 
-  it('exports protocol version constant discepto-protocol-3', () => {
-    assert.equal(PROTOCOL_VERSION, 'discepto-protocol-3');
+  it('exports protocol version constant discepto-protocol-4', () => {
+    assert.equal(PROTOCOL_VERSION, 'discepto-protocol-4');
   });
 });
 
@@ -684,7 +724,7 @@ describe('replay outcome values', () => {
     const result = replayEvents(baseRun, [...throughFirstLease, mutationEv('challenger-1')]);
     const outcome = result.outcomes.at(-1);
     assert.equal(outcome.status, 'rejected');
-    const { status, ...rejection } = outcome;
+    const { status: _status, ...rejection } = outcome;
     assert.deepEqual(rejection, result.snapshot.rejections.at(-1));
     assert.deepEqual(rejection, {
       code: 'MUTATION_CHALLENGER',
@@ -722,20 +762,21 @@ describe('replay outcome values', () => {
 describe('authority rejection catalogue derivation', () => {
   it('docs limitations table matches the catalogue exactly', () => {
     const markdown = readFileSync(join(root, 'docs/limitations.md'), 'utf8');
-    const rows = [...markdown.matchAll(/^\| `([A-Z_]+)` \| `([a-z]+)` \| (?:Yes|No) \|$/gm)];
+    const rows = [...markdown.matchAll(/^\| `([A-Z_]+)`\s+\| `([a-z]+)`\s+\| (?:Yes|No)\s+\|$/gm)];
     const tableCodes = rows.map((match) => match[1]);
     assert.equal(tableCodes.length, 14);
-    assert.deepEqual(
-      [...tableCodes].sort(),
-      Object.keys(AUTHORITY_REJECTIONS).sort(),
-    );
+    assert.deepEqual([...tableCodes].sort(), Object.keys(AUTHORITY_REJECTIONS).sort());
     for (const [code, operation] of rows.map((match) => [match[1], match[2]])) {
-      assert.equal(AUTHORITY_REJECTIONS[code].operation, operation, `docs table operation drift for ${code}`);
+      assert.equal(
+        AUTHORITY_REJECTIONS[code].operation,
+        operation,
+        `docs table operation drift for ${code}`,
+      );
     }
   });
 
   it('every catalogue message is a non-empty string with a matching operation', () => {
-    for (const [code, rule] of Object.entries(AUTHORITY_REJECTIONS)) {
+    for (const [_code, rule] of Object.entries(AUTHORITY_REJECTIONS)) {
       assert.equal(typeof rule.operation, 'string');
       assert.ok(['lease', 'mutation', 'review'].includes(rule.operation));
       const variants = Object.values(rule.messages);
@@ -759,10 +800,7 @@ describe('replay integration', () => {
   });
 
   it('replay stops immediately on invalid first event before later diagnosis', () => {
-    const result = replayEvents(baseRun, [
-      null,
-      diagnosisEv('writer-1'),
-    ]);
+    const result = replayEvents(baseRun, [null, diagnosisEv('writer-1')]);
     assert.equal(result.outcomes.length, 1);
     assert.equal(result.outcomes[0].status, 'fatal');
     assert.match(result.outcomes[0].message, /event requires type/);
@@ -788,10 +826,7 @@ describe('replay integration', () => {
     assert.ok(result.snapshot.rejection_count >= 2);
     assert.equal(result.snapshot.phase, 'FINAL');
 
-    const stopped = replayEvents(baseRun, [
-      ...events.slice(0, 8),
-      ev('mutation', null),
-    ]);
+    const stopped = replayEvents(baseRun, [...events.slice(0, 8), ev('mutation', null)]);
     assert.ok(stopped.snapshot.errors.length > 0);
     assert.notEqual(stopped.snapshot.phase, 'FINAL');
   });

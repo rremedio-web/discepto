@@ -314,7 +314,7 @@
   },
   {
     "id": "held-r10-default",
-    "claim": "neutral held-out baseline with no triggering facts",
+    "claim": "neutral conformance baseline with no triggering facts",
     "evidence": [
       {
         "ref": "ev-held-r10-baseline",

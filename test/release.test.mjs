@@ -36,8 +36,8 @@ const hasWorktree = hasGitWorktree();
 const itRequiresGit = hasWorktree ? it : it.skip;
 if (!hasWorktree) {
   console.warn(
-    'release.test: LOUD SKIP — no git worktree detected; git-dependent release tests will not run.'
-    + ' Run the suite inside a git checkout/worktree to execute them.',
+    'release.test: LOUD SKIP — no git worktree detected; git-dependent release tests will not run.' +
+      ' Run the suite inside a git checkout/worktree to execute them.',
   );
 }
 
@@ -67,10 +67,14 @@ function cloneRepo() {
   const result = spawnSync('git', ['clone', '-q', root, cloneRoot], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr || result.stdout);
   seedReleaseScripts(cloneRoot);
-  const diff = spawnSync('git', ['diff', '--quiet', '--', 'scripts/release.sh', 'scripts/check_release.py'], {
-    encoding: 'utf8',
-    cwd: cloneRoot,
-  });
+  const diff = spawnSync(
+    'git',
+    ['diff', '--quiet', '--', 'scripts/release.sh', 'scripts/check_release.py'],
+    {
+      encoding: 'utf8',
+      cwd: cloneRoot,
+    },
+  );
   if (diff.status !== 0) {
     const add = spawnSync('git', ['add', 'scripts/release.sh', 'scripts/check_release.py'], {
       encoding: 'utf8',
@@ -79,7 +83,16 @@ function cloneRepo() {
     assert.equal(add.status, 0, add.stderr || add.stdout);
     const commit = spawnSync(
       'git',
-      ['-c', 'user.name=test', '-c', 'user.email=test@example.invalid', 'commit', '-m', 'seed release scripts', '--no-gpg-sign'],
+      [
+        '-c',
+        'user.name=test',
+        '-c',
+        'user.email=test@example.invalid',
+        'commit',
+        '-m',
+        'seed release scripts',
+        '--no-gpg-sign',
+      ],
       { encoding: 'utf8', cwd: cloneRoot },
     );
     assert.equal(commit.status, 0, commit.stderr || commit.stdout);
@@ -103,38 +116,41 @@ describe('release tooling', () => {
     }
   });
 
-  itRequiresGit('structural-only mode produces discepto.zip, receipt.json, and deterministic hash across two builds', () => {
-    const cloneRoot = cloneRepo();
-    const out = join(tmpdir(), `discepto-release-${process.pid}-${Date.now()}`);
-    assert.ok(!existsSync(out));
-    try {
-      const first = runRelease(['--structural-only', out], cloneRoot);
-      assert.equal(first.status, 0, first.stderr || first.stdout);
+  itRequiresGit(
+    'structural-only mode produces discepto.zip, receipt.json, and deterministic hash across two builds',
+    () => {
+      const cloneRoot = cloneRepo();
+      const out = join(tmpdir(), `discepto-release-${process.pid}-${Date.now()}`);
+      assert.ok(!existsSync(out));
+      try {
+        const first = runRelease(['--structural-only', out], cloneRoot);
+        assert.equal(first.status, 0, first.stderr || first.stdout);
 
-      const entries = readdirSync(out).sort();
-      assert.deepEqual(entries, ['discepto.zip', 'receipt.json']);
+        const entries = readdirSync(out).sort();
+        assert.deepEqual(entries, ['discepto.zip', 'receipt.json']);
 
-      const receipt = JSON.parse(readFileSync(join(out, 'receipt.json'), 'utf8'));
-      assert.equal(receipt.status, 'ok');
-      assert.ok(receipt.sha256);
-      assert.ok(receipt.head);
-      assert.ok(receipt.tree);
-      assert.ok(receipt.tracked_count > 0);
-      assert.equal(receipt.mode, 'structural-only');
-      assert.ok(receipt.tools?.node);
-      assert.ok(receipt.tools?.python);
-      assert.ok(receipt.tools?.git);
+        const receipt = JSON.parse(readFileSync(join(out, 'receipt.json'), 'utf8'));
+        assert.equal(receipt.status, 'ok');
+        assert.ok(receipt.sha256);
+        assert.ok(receipt.head);
+        assert.ok(receipt.tree);
+        assert.ok(receipt.tracked_count > 0);
+        assert.equal(receipt.mode, 'structural-only');
+        assert.ok(receipt.tools?.node);
+        assert.ok(receipt.tools?.python);
+        assert.ok(receipt.tools?.git);
 
-      rmSync(out, { recursive: true, force: true });
-      const second = runRelease(['--structural-only', out], cloneRoot);
-      assert.equal(second.status, 0, second.stderr || second.stdout);
-      const receipt2 = JSON.parse(readFileSync(join(out, 'receipt.json'), 'utf8'));
-      assert.equal(receipt.sha256, receipt2.sha256);
-    } finally {
-      rmSync(cloneRoot, { recursive: true, force: true });
-      rmSync(out, { recursive: true, force: true });
-    }
-  });
+        rmSync(out, { recursive: true, force: true });
+        const second = runRelease(['--structural-only', out], cloneRoot);
+        assert.equal(second.status, 0, second.stderr || second.stdout);
+        const receipt2 = JSON.parse(readFileSync(join(out, 'receipt.json'), 'utf8'));
+        assert.equal(receipt.sha256, receipt2.sha256);
+      } finally {
+        rmSync(cloneRoot, { recursive: true, force: true });
+        rmSync(out, { recursive: true, force: true });
+      }
+    },
+  );
 
   itRequiresGit('rejects untracked files in the worktree', () => {
     const cloneRoot = cloneRepo();
@@ -152,35 +168,40 @@ describe('release tooling', () => {
     }
   });
 
-  itRequiresGit('cloned release ignores local fsmonitor config and omits marker from archive', () => {
-    const cloneRoot = cloneRepo();
-    const out = join(tmpdir(), `discepto-clone-out-${process.pid}`);
-    const marker = 'fsmonitor-marker-sentinel-xyzzy';
-    try {
-      const cfg = spawnSync('git', ['config', 'core.fsmonitor', marker], {
-        encoding: 'utf8',
-        cwd: cloneRoot,
-      });
-      assert.equal(cfg.status, 0, cfg.stderr || cfg.stdout);
+  itRequiresGit(
+    'cloned release ignores local fsmonitor config and omits marker from archive',
+    () => {
+      const cloneRoot = cloneRepo();
+      const out = join(tmpdir(), `discepto-clone-out-${process.pid}`);
+      const marker = 'fsmonitor-marker-sentinel-xyzzy';
+      try {
+        const cfg = spawnSync('git', ['config', 'core.fsmonitor', marker], {
+          encoding: 'utf8',
+          cwd: cloneRoot,
+        });
+        assert.equal(cfg.status, 0, cfg.stderr || cfg.stdout);
 
-      const release = runRelease(['--structural-only', out], cloneRoot);
-      assert.equal(release.status, 0, release.stderr || release.stdout);
+        const release = runRelease(['--structural-only', out], cloneRoot);
+        assert.equal(release.status, 0, release.stderr || release.stdout);
 
-      const inspect = mkdtempSync(join(tmpdir(), 'discepto-unzip-'));
-      const unzip = spawnSync('unzip', ['-q', join(out, 'discepto.zip'), '-d', inspect], {
-        encoding: 'utf8',
-      });
-      assert.equal(unzip.status, 0, unzip.stderr || unzip.stdout);
+        const inspect = mkdtempSync(join(tmpdir(), 'discepto-unzip-'));
+        const unzip = spawnSync('unzip', ['-q', join(out, 'discepto.zip'), '-d', inspect], {
+          encoding: 'utf8',
+        });
+        assert.equal(unzip.status, 0, unzip.stderr || unzip.stdout);
 
-      const zipList = spawnSync('unzip', ['-Z1', join(out, 'discepto.zip')], { encoding: 'utf8' });
-      const combined = zipList.stdout + readFileSync(join(out, 'receipt.json'), 'utf8');
-      assert.doesNotMatch(combined, new RegExp(marker));
-      assert.doesNotMatch(combined, /fsmonitor/i);
-    } finally {
-      rmSync(cloneRoot, { recursive: true, force: true });
-      rmSync(out, { recursive: true, force: true });
-    }
-  });
+        const zipList = spawnSync('unzip', ['-Z1', join(out, 'discepto.zip')], {
+          encoding: 'utf8',
+        });
+        const combined = zipList.stdout + readFileSync(join(out, 'receipt.json'), 'utf8');
+        assert.doesNotMatch(combined, new RegExp(marker));
+        assert.doesNotMatch(combined, /fsmonitor/i);
+      } finally {
+        rmSync(cloneRoot, { recursive: true, force: true });
+        rmSync(out, { recursive: true, force: true });
+      }
+    },
+  );
 
   it('rejects traversal paths in tracked list', () => {
     const out = mkdtempSync(join(tmpdir(), 'discepto-bad-'));
@@ -299,11 +320,7 @@ describe('release tooling', () => {
       writeFileSync(join(deny, 'needles.txt'), 'SECRET_NEEDLE_XYZ\n', 'utf8');
       writeFileSync(join(out, 'tracked-files.txt'), 'README.md\n', 'utf8');
       writeFileSync(join(out, 'README.md'), 'contains SECRET_NEEDLE_XYZ inside', 'utf8');
-      const result = runChecker([
-        '--private-denylist',
-        join(deny, 'needles.txt'),
-        out,
-      ]);
+      const result = runChecker(['--private-denylist', join(deny, 'needles.txt'), out]);
       assert.notEqual(result.status, 0);
       const combined = result.stderr + result.stdout;
       assert.match(combined, /private needle/i);

@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import {
   validateRun,
   validateDiagnosis,
@@ -11,8 +10,9 @@ import {
   validateMutation,
   PHASES,
 } from './schema.mjs';
+import { compareUtf16, sha256Canonical } from './canonical.mjs';
 
-export const PROTOCOL_VERSION = 'discepto-protocol-3';
+export const PROTOCOL_VERSION = 'discepto-protocol-4';
 
 /**
  * The single authority-rejection catalogue. Every code the protocol can emit
@@ -88,8 +88,8 @@ function sortObservations(observations) {
   return observations
     .map((obs) => ({ key: obs.key, value: obs.value }))
     .sort((a, b) => {
-      const keyCmp = a.key.localeCompare(b.key);
-      return keyCmp !== 0 ? keyCmp : a.value.localeCompare(b.value);
+      const keyCmp = compareUtf16(a.key, b.key);
+      return keyCmp !== 0 ? keyCmp : compareUtf16(a.value, b.value);
     });
 }
 
@@ -105,7 +105,7 @@ export function canonicalMeasurementHash(measurement) {
       payload.artifact_identity.url = measurement.artifact_identity.url;
     }
   }
-  return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+  return sha256Canonical(payload);
 }
 
 export function deriveFreezeBinding(run, freeze, changedPaths, measurementHash) {
@@ -116,14 +116,14 @@ export function deriveFreezeBinding(run, freeze, changedPaths, measurementHash) 
     freeze_id: freeze.id,
     base_id: freeze.base_id,
     candidate_id: freeze.candidate_id,
-    changed_paths: [...changedPaths].sort(),
+    changed_paths: [...changedPaths].sort(compareUtf16),
     measurement_hash: measurementHash,
   };
-  return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+  return sha256Canonical(payload);
 }
 
 function deriveChangedPaths(mutations) {
-  return [...new Set(mutations.map((m) => m.path))].sort();
+  return [...new Set(mutations.map((m) => m.path))].sort(compareUtf16);
 }
 
 function scopeSubset(newScope, currentScope) {
@@ -264,7 +264,6 @@ function applyDispute(state, dispute) {
 }
 
 function applyMeasurement(state, measurement) {
-
   if (state.phase === 'DISPUTE') {
     if (state.disputes.length < 2) {
       return fail(state, 'measurement requires both dispute claims');
@@ -283,7 +282,6 @@ function applyMeasurement(state, measurement) {
 }
 
 function applyLease(state, lease) {
-
   const isFirstLease = state.lease === null;
 
   if (isFirstLease) {
@@ -322,7 +320,6 @@ function applyLease(state, lease) {
 }
 
 function applyMutation(state, mutation) {
-
   const { agent_id: agentId, path } = mutation;
 
   if (state.phase !== 'IMPLEMENT' && state.phase !== 'CORRECT') {

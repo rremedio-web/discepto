@@ -1,9 +1,9 @@
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
-import { runAdversarialDemo, sealReceipt } from './receipt.mjs';
-import { observeRejection, WATCHER_CALIBRATION_VERSION } from './watcher-adapter.mjs';
+import { runAdversarialDemo, sealReceipt } from '../../src/receipt.mjs';
+import { observeRejection, WATCHER_CALIBRATION_VERSION } from './adapter.mjs';
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
 export function buildWatcherAdversarialReceipt(adversarialOutput) {
   const { output } = adversarialOutput;
@@ -12,10 +12,12 @@ export function buildWatcherAdversarialReceipt(adversarialOutput) {
     scope: output.fixture_id,
   };
 
-  const observations = output.rejections.map((item, index) => observeRejection(
-    { code: item.code, operation: item.operation },
-    { ...context, sequence: index },
-  ));
+  const observations = output.rejections.map((item, index) =>
+    observeRejection(
+      { code: item.code, operation: item.operation },
+      { ...context, sequence: index },
+    ),
+  );
 
   const body = {
     watcher_calibration_version: WATCHER_CALIBRATION_VERSION,
@@ -34,9 +36,9 @@ export function runWatcherAdversarialDemo(baseDir = root) {
   const receipt = buildWatcherAdversarialReceipt(adversarial);
   const allCatches = receipt.observations.every(
     (observation) =>
-      observation.classification === 'RECORDS_TRUST'
-      && observation.disposition === 'HOLD'
-      && observation.owner_decision === 'yes',
+      observation.classification === 'RECORDS_TRUST' &&
+      observation.disposition === 'HOLD' &&
+      observation.owner_decision === 'yes',
   );
   return { adversarial, receipt, allCatches };
 }

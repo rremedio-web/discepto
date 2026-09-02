@@ -1,64 +1,104 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Neutral sequence table fixture</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: ui-monospace, monospace; }
-    .viewport {
-      width: 320px;
-      border: 1px solid #ccc;
-    }
-    table { border-collapse: collapse; }
-    th, td { border: 1px solid #ddd; text-align: left; }
-    th { padding: 4px 8px; font-weight: 600; }
-    .seq-cell {
-      font-size: 14px;
-      line-height: 16px;
-    }
-    body.before .viewport { overflow: visible; }
-    body.before table { min-width: 360px; }
-    body.before .seq-cell {
-      padding: 4px;
-      max-width: 96px;
-      word-break: break-all;
-      white-space: normal;
-    }
-    body.after .viewport { overflow: hidden; }
-    body.after table { width: 100%; min-width: 0; table-layout: fixed; }
-    body.after th:last-child,
-    body.after td[data-testid="seq-b"] { display: none; }
-    body.after .seq-cell {
-      padding: 8px 12px;
-      word-break: keep-all;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-  </style>
-</head>
-<body class="before">
-  <div class="viewport" data-testid="viewport">
-    <table>
-      <thead>
-        <tr>
-          <th>Col A</th>
-          <th>Col B</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="seq-cell" data-testid="seq-a">XKQMVPLRNWTZXHDYFGABCKLMNOP</td>
-          <td class="seq-cell" data-testid="seq-b">BJSWQPLMKNTYVXRHZACDEFGHIJKL</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <script>
-    if (new URLSearchParams(location.search).get('variant') === 'after') {
-      document.body.className = 'after';
-    }
-  </script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <title>Neutral sequence table fixture</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: ui-monospace, monospace;
+      }
+      .viewport {
+        width: 100%;
+        border: 1px solid #ccc;
+      }
+      table {
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        text-align: left;
+      }
+      th {
+        padding: 4px 8px;
+        font-weight: 600;
+      }
+      .seq-cell {
+        font-size: 14px;
+        line-height: 16px;
+      }
+      body.before .viewport {
+        overflow: visible;
+      }
+      body.before table {
+        min-width: calc(100% + 48px);
+      }
+      body.before .seq-cell {
+        padding: 4px;
+      }
+      body.before .seq-token {
+        display: block;
+        max-width: 96px;
+        word-break: break-all;
+        white-space: normal;
+      }
+      body.after .viewport {
+        overflow: hidden;
+      }
+      body.after table {
+        width: 100%;
+        min-width: 0;
+        table-layout: fixed;
+      }
+      body.after th:last-child,
+      body.after td[data-testid='seq-b'] {
+        display: none;
+      }
+      body.after .seq-cell {
+        padding: 8px 12px;
+        word-break: keep-all;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      body.after .seq-token {
+        display: inline;
+        max-width: none;
+        word-break: inherit;
+        white-space: inherit;
+      }
+    </style>
+  </head>
+  <body class="before">
+    <div class="viewport" data-testid="viewport">
+      <table>
+        <thead>
+          <tr>
+            <th>Col A</th>
+            <th>Col B</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="seq-cell" data-testid="seq-a">
+              <span class="seq-token">XKQMVPLRNWTZXHDYFGABCKLMNOP</span>
+            </td>
+            <td class="seq-cell" data-testid="seq-b">
+              <span class="seq-token">BJSWQPLMKNTYVXRHZACDEFGHIJKL</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      if (new URLSearchParams(location.search).get('variant') === 'after') {
+        document.body.className = 'after';
+      }
+    </script>
+  </body>
 </html>

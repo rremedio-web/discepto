@@ -1,0 +1,13 @@
+{
+  "run": {
+    "id": "run-neutral-001",
+    "worktree_id": "wt-neutral-001",
+    "coordinator_id": "coordinator-neutral",
+    "agents": [
+      { "id": "agent-alpha", "role": "writer", "seat_id": "writer-seat" },
+      { "id": "agent-beta", "role": "challenger", "seat_id": "challenger-seat" }
+    ],
+    "phase": "DIAGNOSE"
+  },
+  "sequence": "XKQMVPLRNWTZXHDYFGABCKLMNOP"
+}

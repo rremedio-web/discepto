@@ -36,9 +36,9 @@ export function classify(scenario) {
     return result('TOOLING', 'STEER', 'no');
   }
   if (
-    facts.reference_status === 'mismatch'
-    || facts.reference_status === 'unverified'
-    || (facts.vantage === 'blind' && facts.absence_claimed === true)
+    facts.reference_status === 'mismatch' ||
+    facts.reference_status === 'unverified' ||
+    (facts.vantage === 'blind' && facts.absence_claimed === true)
   ) {
     return result('UNKNOWN', 'VERIFY', 'no');
   }

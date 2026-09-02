@@ -12,3 +12,4 @@ release-out/
 __MACOSX/
 test-results/
 playwright-report/
+.claude/

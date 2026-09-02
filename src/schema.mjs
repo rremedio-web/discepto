@@ -65,7 +65,9 @@ function fieldError(rule, value, label, field) {
       return rule.values.includes(value) ? null : `invalid ${field}: ${value}`;
     case 'sha256Hex':
       if (!isNonEmptyString(value)) return `${label} is required`;
-      return isLowercaseSha256Hex(value) ? null : `${label} must be a lowercase 64-character hex digest`;
+      return isLowercaseSha256Hex(value)
+        ? null
+        : `${label} must be a lowercase 64-character hex digest`;
     case 'nonEmptyStringArray': {
       if (!Array.isArray(value) || value.length === 0 || !value.every(isNonEmptyString)) {
         return `${label} must be a non-empty string array`;
@@ -150,9 +152,10 @@ const OBSERVATION_SPEC = Object.freeze({
     value: UNCHECKED,
   }),
   check: Object.freeze((item, label) =>
-    (!isNonEmptyString(item.key) || !isNonEmptyString(item.value)
+    !isNonEmptyString(item.key) || !isNonEmptyString(item.value)
       ? `${label} requires key and value`
-      : null)),
+      : null,
+  ),
 });
 
 const ARTIFACT_IDENTITY_SPEC = Object.freeze({
@@ -228,9 +231,10 @@ const RUN_SPEC = Object.freeze({
     agents: Object.freeze({ kind: 'custom', check: agentsFieldError }),
   }),
   check: Object.freeze((run) =>
-    (run.agents.some((agent) => agent.id === run.coordinator_id)
+    run.agents.some((agent) => agent.id === run.coordinator_id)
       ? 'run.coordinator_id must be distinct from agent ids'
-      : null)),
+      : null,
+  ),
 });
 
 const DIAGNOSIS_SPEC = Object.freeze({
@@ -319,3 +323,69 @@ export const validateReview = strictRecord(REVIEW_SPEC);
 export const validateCorrection = strictRecord(CORRECTION_SPEC);
 export const validateDispute = strictRecord(DISPUTE_SPEC);
 export const validateMutation = strictRecord(MUTATION_SPEC);
+
+export const EVENT_TYPES = Object.freeze([
+  'diagnosis',
+  'dispute',
+  'measurement',
+  'lease',
+  'mutation',
+  'freeze',
+  'review',
+  'correction',
+]);
+
+const EVENT_PAYLOAD_VALIDATORS = Object.freeze({
+  diagnosis: validateDiagnosis,
+  dispute: validateDispute,
+  measurement: validateMeasurement,
+  lease: validateLease,
+  mutation: validateMutation,
+  freeze: validateFreeze,
+  review: validateReview,
+  correction: validateCorrection,
+});
+
+export function validateEvent(event) {
+  if (typeof event !== 'object' || event === null || Array.isArray(event)) {
+    return { ok: false, error: 'event must be an object' };
+  }
+  if (typeof event.type !== 'string' || event.type.length === 0) {
+    return { ok: false, error: 'event requires type' };
+  }
+  const validator = EVENT_PAYLOAD_VALIDATORS[event.type];
+  if (!validator) {
+    return { ok: false, error: `unknown event type: ${event.type}` };
+  }
+  const extra = Object.keys(event).filter((key) => key !== 'type' && key !== event.type);
+  if (extra.length > 0) {
+    return { ok: false, error: `event has unknown fields: ${extra.join(', ')}` };
+  }
+  if (!(event.type in event)) {
+    return { ok: false, error: `event missing ${event.type} payload` };
+  }
+  return validator(event[event.type]);
+}
+
+export function validateEvents(events) {
+  if (!Array.isArray(events)) {
+    return { ok: false, error: 'events must be an array' };
+  }
+  for (let i = 0; i < events.length; i += 1) {
+    const result = validateEvent(events[i]);
+    if (!result.ok) {
+      return { ok: false, error: `events[${i}]: ${result.error}` };
+    }
+  }
+  return { ok: true };
+}
+
+export function validateScenario(scenario) {
+  if (typeof scenario !== 'object' || scenario === null || Array.isArray(scenario)) {
+    return { ok: false, error: 'scenario must be an object' };
+  }
+  if (!('run' in scenario)) {
+    return { ok: false, error: 'scenario.run is required' };
+  }
+  return validateRun(scenario.run);
+}

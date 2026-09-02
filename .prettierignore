@@ -1,0 +1,8 @@
+package-lock.json
+LICENSE
+coverage
+node_modules
+test-results
+playwright-report
+*.zip
+release-out
