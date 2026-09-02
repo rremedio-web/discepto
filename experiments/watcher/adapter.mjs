@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
-import { classify } from '../calibration/watcher/classifier.mjs';
-import { REJECTION_CODE_OPERATIONS } from './rejections.mjs';
+import { classify } from './classifier.mjs';
+import { REJECTION_CODE_OPERATIONS } from '../../src/rejections.mjs';
 
 export const WATCHER_CALIBRATION_VERSION = 'watcher-calibration-1';
 
@@ -72,7 +72,9 @@ export function adaptRejection(rejection, context = {}) {
     throw new Error(`unknown rejection code: ${code}`);
   }
   if (operation !== expectedOperation) {
-    throw new Error(`code/operation mismatch: ${code} expects ${expectedOperation}, got ${operation}`);
+    throw new Error(
+      `code/operation mismatch: ${code} expects ${expectedOperation}, got ${operation}`,
+    );
   }
 
   const runId = resolveRunId(context);
@@ -85,11 +87,13 @@ export function adaptRejection(rejection, context = {}) {
   return {
     id: scenarioId,
     claim: `authority rejection ${codeSlug}`,
-    evidence: [{
-      ref: `ev-discepto-${identitySuffix}`,
-      kind: 'rejection',
-      summary: `structured ${operation} authority rejection ${codeSlug}`,
-    }],
+    evidence: [
+      {
+        ref: `ev-discepto-${identitySuffix}`,
+        kind: 'rejection',
+        summary: `structured ${operation} authority rejection ${codeSlug}`,
+      },
+    ],
     scope,
     status: 'authority-rejected',
     facts: authorityFacts(operation),

@@ -8,10 +8,10 @@ Discepto is a synthetic reference experiment, not a live orchestrator.
 2. **Event trace** — ordered protocol events covering all phases including one correction cycle in the neutral trace
 3. **Adversarial trace** — same scenario run with a rejected lease whose declared `issuer_id` does not match `run.coordinator_id`, challenger mutation, writer `reviewer_id`, and challenger review whose `seat_id` matches the writer seat before valid challenger `PASS`; proves rejections do not alter final binding
 4. **Measurement fixture** — static HTML with `?variant=after` query toggle; the optional `artifact_identity` records whether evidence came from a file, local server, staging, or production target
-5. **Cross-engine checks** — Playwright captures structured measurements (line count, overflow px) in Chromium, Firefox, and WebKit at 320px width
+5. **Cross-engine checks** — Playwright captures structured measurements (line count, `overflow_x_px`, `overflow_y_px`) in Chromium, Firefox, and WebKit at 320px, 375px, and 768px widths
 6. **Replay validation** — deterministic stdout JSON compared across runs; adversarial demo compared byte-identically across two invocations
-7. **Watcher calibration** — isolated classifier scored against train/held-out fixtures via `npm run validate:watcher`; synthetic policy gate only
-8. **Watcher adversarial receipt** — adapts the four adversarial rejections through `src/watcher-adapter.mjs` and emits deterministic JSON via `npm run demo:watcher:adversarial`; not blinded independent validation or production oversight
+7. **Optional watcher experiment** — `experiments/watcher/` maps structured authority rejections into a deterministic ordered-rules classifier; scored via `npm run validate:watcher`. Conformance exercise only, not a trained model.
+8. **Watcher adversarial receipt** — `npm run demo:watcher:adversarial` adapts the four adversarial rejections through `experiments/watcher/adapter.mjs`; not blinded independent validation or production oversight
 
 ## Dispute resolution
 

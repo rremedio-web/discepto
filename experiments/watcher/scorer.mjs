@@ -39,9 +39,9 @@ function assertExactIds(actualIds, expectedIds, label) {
 
 function answersEqual(actual, expected) {
   return (
-    actual.classification === expected.classification
-    && actual.disposition === expected.disposition
-    && actual.owner_decision === expected.owner_decision
+    actual.classification === expected.classification &&
+    actual.disposition === expected.disposition &&
+    actual.owner_decision === expected.owner_decision
   );
 }
 
@@ -126,9 +126,9 @@ export function scoreBaseline(scenarios, keys) {
     if (!key) continue;
     total += 1;
     if (
-      key.classification === 'UNKNOWN'
-      && key.disposition === 'OBSERVE'
-      && key.owner_decision === 'no'
+      key.classification === 'UNKNOWN' &&
+      key.disposition === 'OBSERVE' &&
+      key.owner_decision === 'no'
     ) {
       exact += 1;
     }

@@ -19,9 +19,15 @@ jobs:
           cache: false
       - run: npm ci --ignore-scripts
       - run: npm audit --audit-level=high
+      - run: npm run lint
+      - run: npm run format:check
       - run: npm test
+      - run: npm run coverage
       - run: npm run validate
+      - run: npm run validate:watcher
       - run: npm run demo
+      - run: npm run demo:adversarial
+      - run: npm run demo:watcher:adversarial
       - run: npx playwright install --with-deps chromium firefox webkit
       - run: npx playwright test
       - run: bash scripts/release.sh --structural-only /tmp/discepto-structural-release

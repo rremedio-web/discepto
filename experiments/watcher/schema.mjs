@@ -7,13 +7,7 @@ export const CLASSIFICATIONS = Object.freeze([
   'UNKNOWN',
 ]);
 
-export const DISPOSITIONS = Object.freeze([
-  'ESCALATE',
-  'OBSERVE',
-  'HOLD',
-  'STEER',
-  'VERIFY',
-]);
+export const DISPOSITIONS = Object.freeze(['ESCALATE', 'OBSERVE', 'HOLD', 'STEER', 'VERIFY']);
 
 export const RESERVED_IDS = Object.freeze([
   '__proto__',

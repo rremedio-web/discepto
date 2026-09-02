@@ -1,17 +1,17 @@
 # Protocol
 
-Discepto defines a fixed-phase, two-agent protocol for a single isolated worktree (protocol version `discepto-protocol-3`).
+Discepto defines a fixed-phase, two-agent protocol for a single isolated worktree (protocol version `discepto-protocol-4`).
 
 ## Compatibility
 
-Protocol v3 makes the previously asserted review independence boundary explicit: run agents and review records must carry `seat_id`, and v3 rejects traces that omit those fields. Protocol v2 traces therefore require migration by assigning unique writer/challenger seats and recording the challenger seat on every review before they can be replayed as v3. `Measurement.artifact_identity` remains optional, so measurements without that field retain compatibility within v3.
+Protocol v4 replaces locale-dependent observation sorting and ordinary `JSON.stringify` hashing with a documented canonical JSON encoding. Freeze bindings, measurement hashes, and receipt hashes under v4 are not comparable to v3 digests; v3 traces must be rehashed after migration. Protocol v3 made the previously asserted review independence boundary explicit: run agents and review records must carry `seat_id`, and traces that omit those fields are rejected. Protocol v2 traces therefore require migration by assigning unique writer/challenger seats and recording the challenger seat on every review before they can be replayed as v3 or v4. `Measurement.artifact_identity` remains optional, so measurements without that field retain compatibility within v4.
 
 ## Roles
 
-| Role | Count | Mutation |
-|------|-------|----------|
-| writer | 1 | Allowed only with active lease whose declared `issuer_id` matches `run.coordinator_id`, and within scoped paths |
-| challenger | 1 | Read-only always |
+| Role       | Count | Mutation                                                                                                        |
+| ---------- | ----- | --------------------------------------------------------------------------------------------------------------- |
+| writer     | 1     | Allowed only with active lease whose declared `issuer_id` matches `run.coordinator_id`, and within scoped paths |
+| challenger | 1     | Read-only always                                                                                                |
 
 `Run` declares a `coordinator_id` distinct from both agent ids. Each agent also declares a unique `seat_id`, which identifies the execution seat separately from the actor label. Exactly one predesignated writer may hold the active lease. Both agents diagnose read-only.
 
@@ -69,7 +69,7 @@ Unknown fields and invalid enums are rejected.
 
 ## Trace binding
 
-Freeze identity is a canonical SHA-256 digest over:
+Freeze identity is a SHA-256 digest of Discepto canonical JSON over:
 
 - `protocol_version`
 - `run_id`
@@ -78,9 +78,11 @@ Freeze identity is a canonical SHA-256 digest over:
 - `base_id`
 - `candidate_id`
 - sorted recorded mutation paths (derived from applied mutations, not request fields)
-- canonical measurement digest (`method`, sorted observations, `result`)
+- canonical measurement digest (`method`, sorted observations, `result`, optional `artifact_identity`)
 
-Reviews and corrections must align with the current freeze chain. The binding covers declared protocol fields only. It does **not** hash filesystem bytes or attest to file contents on disk.
+Canonical JSON is whitespace-free. Object keys and observation pairs are sorted by UTF-16 code-unit order, not default-locale string comparison. Arrays keep their declared order. Strings, finite numbers, booleans, and null use `JSON.stringify` forms. Changing this encoding requires a protocol-version increment. The encoding is not a full RFC 8785 number-form implementation; Discepto hashes only JSON values it constructs.
+
+Reviews and corrections must align with the current freeze chain. The binding covers declared protocol fields only. It does **not** hash filesystem bytes or attest to file contents on disk. Receipt hashes use the same serializer.
 
 ## Replay
 
@@ -88,8 +90,6 @@ Offline replay reads synthetic fixture events, applies authority checks, and emi
 
 The neutral scenario uses `fixtures/events.json`. The adversarial trace (`fixtures/adversarial-events.json`) replays the same `scenario.json` run with a rejected lease whose declared `issuer_id` does not match `run.coordinator_id`, challenger mutation, and writer `reviewer_id` before a valid challenger `PASS`. `npm run demo:adversarial` emits a deterministic receipt JSON including `protocol_version`, `fixture_id`, `run_id`, phase/freeze/binding, structured rejection records (`code`, `operation`, `message`), `errors`, per-field `expected_match` booleans, and `receipt_hash`. Exit code is nonzero on fatal errors or expected mismatch.
 
-## Watcher adapter boundary
+## Optional watcher experiment
 
-`src/watcher-adapter.mjs` consumes structured Discepto rejections `{ code, operation, message }` but maps scenarios using `code` and `operation` only. It supports the fourteen stable authority rejection codes emitted by `src/protocol.mjs`, validates code/operation pairs fail-closed, and classifies adapted scenarios through the isolated watcher classifier. This is a deterministic synthetic policy/reference gate — not learned classification, blinded independent validation, production oversight, or real-world efficacy.
-
-`npm run demo:watcher:adversarial` adapts the four adversarial trace rejections and emits a deterministic watcher receipt with `watcher_calibration_version`, source protocol version/fixture/receipt hash, `observation_count`, observations (`rejection_code`, `operation`, `scenario_id`, `evidence_ref`, `classification`, `disposition`, `owner_decision`), and `receipt_hash`. Rejection messages are omitted from the watcher receipt body.
+See `experiments/watcher/`. An optional adapter maps structured authority rejections (`code` and `operation` only) into a deterministic ordered-rules classifier. It is a conformance exercise, not a trained model, blinded independent validation, production oversight, or real-world efficacy evaluation.

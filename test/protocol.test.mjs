@@ -17,6 +17,7 @@ import {
   snapshotState,
   EVENT_APPLIERS,
 } from '../src/protocol.mjs';
+import { EVENT_TYPES } from '../src/schema.mjs';
 
 const baseRun = {
   id: 'run-protocol',
@@ -344,18 +345,61 @@ describe('protocol authority and phase invariants', () => {
     assert.equal(canonicalMeasurementHash(reordered), hash);
     assert.notEqual(canonicalMeasurementHash(changed), hash);
     assert.notEqual(canonicalMeasurementHash(differentArtifact), hash);
-    assert.equal(canonicalMeasurementHash(reorderedArtifact), canonicalMeasurementHash(differentArtifact));
+    assert.equal(
+      canonicalMeasurementHash(reorderedArtifact),
+      canonicalMeasurementHash(differentArtifact),
+    );
   });
 
   it('produces canonical SHA-256 trace binding over protocol fields including coordinator_id', () => {
     const mHash = canonicalMeasurementHash(measurement);
-    const binding = deriveFreezeBinding(baseRun, freezeRequest('freeze-x', 'base-x', 'cand-x'), ['b.mjs', 'a.mjs'], mHash);
+    const binding = deriveFreezeBinding(
+      baseRun,
+      freezeRequest('freeze-x', 'base-x', 'cand-x'),
+      ['b.mjs', 'a.mjs'],
+      mHash,
+    );
     assert.match(binding, /^[0-9a-f]{64}$/);
-    assert.equal(binding, deriveFreezeBinding(baseRun, freezeRequest('freeze-x', 'base-x', 'cand-x'), ['a.mjs', 'b.mjs'], mHash));
-    assert.notEqual(binding, deriveFreezeBinding({ ...baseRun, coordinator_id: 'other-coordinator' }, freezeRequest('freeze-x', 'base-x', 'cand-x'), ['a.mjs', 'b.mjs'], mHash));
-    assert.notEqual(binding, deriveFreezeBinding(baseRun, freezeRequest('other', 'base-x', 'cand-x'), ['a.mjs', 'b.mjs'], mHash));
-    assert.notEqual(binding, deriveFreezeBinding(baseRun, freezeRequest('freeze-x', 'base-x', 'cand-x'), ['a.mjs'], mHash));
-    assert.notEqual(binding, deriveFreezeBinding(baseRun, freezeRequest('freeze-x', 'base-x', 'cand-x'), ['a.mjs', 'b.mjs'], 'other-hash'));
+    assert.equal(
+      binding,
+      deriveFreezeBinding(
+        baseRun,
+        freezeRequest('freeze-x', 'base-x', 'cand-x'),
+        ['a.mjs', 'b.mjs'],
+        mHash,
+      ),
+    );
+    assert.notEqual(
+      binding,
+      deriveFreezeBinding(
+        { ...baseRun, coordinator_id: 'other-coordinator' },
+        freezeRequest('freeze-x', 'base-x', 'cand-x'),
+        ['a.mjs', 'b.mjs'],
+        mHash,
+      ),
+    );
+    assert.notEqual(
+      binding,
+      deriveFreezeBinding(
+        baseRun,
+        freezeRequest('other', 'base-x', 'cand-x'),
+        ['a.mjs', 'b.mjs'],
+        mHash,
+      ),
+    );
+    assert.notEqual(
+      binding,
+      deriveFreezeBinding(baseRun, freezeRequest('freeze-x', 'base-x', 'cand-x'), ['a.mjs'], mHash),
+    );
+    assert.notEqual(
+      binding,
+      deriveFreezeBinding(
+        baseRun,
+        freezeRequest('freeze-x', 'base-x', 'cand-x'),
+        ['a.mjs', 'b.mjs'],
+        'other-hash',
+      ),
+    );
   });
 
   it('binding changes when mutation path or measurement changes', () => {
@@ -621,7 +665,12 @@ describe('stable structured nonfatal rejections', () => {
     const state = createInitialState(baseRun);
     throughFirstLease(state);
     applyMutation(state, { agent_id: 'writer-1', path: 'other.mjs' });
-    assertRejection(state, 'MUTATION_OUTSIDE_SCOPE', 'mutation', 'mutation path outside lease scope');
+    assertRejection(
+      state,
+      'MUTATION_OUTSIDE_SCOPE',
+      'mutation',
+      'mutation path outside lease scope',
+    );
   });
 
   it('maps review reviewer mismatch', () => {
@@ -677,7 +726,12 @@ describe('stable structured nonfatal rejections', () => {
       verdict: 'PASS',
       findings: [],
     });
-    assertRejection(state, 'REVIEW_FREEZE_MISMATCH', 'review', 'review must reference current freeze');
+    assertRejection(
+      state,
+      'REVIEW_FREEZE_MISMATCH',
+      'review',
+      'review must reference current freeze',
+    );
   });
 
   it('snapshot returns structured rejection records', () => {
@@ -830,8 +884,8 @@ describe('reproduced attack rejection', () => {
     assert.equal(state.errors.length, 0);
   });
 
-  it('exports protocol version constant discepto-protocol-3', () => {
-    assert.equal(PROTOCOL_VERSION, 'discepto-protocol-3');
+  it('exports protocol version constant discepto-protocol-4', () => {
+    assert.equal(PROTOCOL_VERSION, 'discepto-protocol-4');
   });
 });
 
@@ -860,28 +914,45 @@ describe('replay integration', () => {
   it('replay continues after rejections and stops only on fatal errors', () => {
     const events = [
       { type: 'diagnosis', diagnosis: { agent_id: 'writer-1', read_only: true, findings: ['a'] } },
-      { type: 'diagnosis', diagnosis: { agent_id: 'challenger-1', read_only: true, findings: ['b'] } },
+      {
+        type: 'diagnosis',
+        diagnosis: { agent_id: 'challenger-1', read_only: true, findings: ['b'] },
+      },
       { type: 'dispute', dispute: { agent_id: 'writer-1', claim: 'c1', estimate: 'e1' } },
       { type: 'dispute', dispute: { agent_id: 'challenger-1', claim: 'c2', estimate: 'e2' } },
       { type: 'measurement', measurement },
-      { type: 'lease', lease: { issuer_id: 'writer-1', writer_id: 'writer-1', scope: ['src/a.mjs'], active: true } },
-      { type: 'lease', lease: { issuer_id: 'coordinator-1', writer_id: 'writer-1', scope: ['src/a.mjs'], active: true } },
+      {
+        type: 'lease',
+        lease: { issuer_id: 'writer-1', writer_id: 'writer-1', scope: ['src/a.mjs'], active: true },
+      },
+      {
+        type: 'lease',
+        lease: {
+          issuer_id: 'coordinator-1',
+          writer_id: 'writer-1',
+          scope: ['src/a.mjs'],
+          active: true,
+        },
+      },
       { type: 'mutation', mutation: { agent_id: 'challenger-1', path: 'src/a.mjs' } },
       { type: 'mutation', mutation: { agent_id: 'writer-1', path: 'src/a.mjs' } },
       { type: 'freeze', freeze: freezeRequest('freeze-a') },
-      { type: 'review', review: {
-        reviewer_id: 'challenger-1',
-        seat_id: 'challenger-seat',
-        freeze_id: 'freeze-a',
-        freeze_binding: deriveFreezeBinding(
-          baseRun,
-          freezeRequest('freeze-a'),
-          ['src/a.mjs'],
-          canonicalMeasurementHash(measurement),
-        ),
-        verdict: 'PASS',
-        findings: [],
-      } },
+      {
+        type: 'review',
+        review: {
+          reviewer_id: 'challenger-1',
+          seat_id: 'challenger-seat',
+          freeze_id: 'freeze-a',
+          freeze_binding: deriveFreezeBinding(
+            baseRun,
+            freezeRequest('freeze-a'),
+            ['src/a.mjs'],
+            canonicalMeasurementHash(measurement),
+          ),
+          verdict: 'PASS',
+          findings: [],
+        },
+      },
     ];
     const state = replayEvents(baseRun, events);
     assert.equal(state.errors.length, 0);
@@ -899,10 +970,7 @@ describe('replay integration', () => {
 
 describe('event vocabulary', () => {
   it('EVENT_APPLIERS is the single closed event vocabulary', () => {
-    assert.deepEqual(
-      Object.keys(EVENT_APPLIERS).sort(),
-      ['correction', 'diagnosis', 'dispute', 'freeze', 'lease', 'measurement', 'mutation', 'review'],
-    );
+    assert.deepEqual(Object.keys(EVENT_APPLIERS).sort(), [...EVENT_TYPES].sort());
   });
 
   it('replay treats an unknown event type as fatal', () => {
@@ -923,27 +991,41 @@ describe('replay lifecycle surface', () => {
     const freezeA = freezeRequest('freeze-snap');
     const events = [
       { type: 'diagnosis', diagnosis: { agent_id: 'writer-1', read_only: true, findings: ['a'] } },
-      { type: 'diagnosis', diagnosis: { agent_id: 'challenger-1', read_only: true, findings: ['b'] } },
+      {
+        type: 'diagnosis',
+        diagnosis: { agent_id: 'challenger-1', read_only: true, findings: ['b'] },
+      },
       { type: 'dispute', dispute: { agent_id: 'writer-1', claim: 'c1', estimate: 'e1' } },
       { type: 'dispute', dispute: { agent_id: 'challenger-1', claim: 'c2', estimate: 'e2' } },
       { type: 'measurement', measurement },
-      { type: 'lease', lease: { issuer_id: 'coordinator-1', writer_id: 'writer-1', scope: ['src/a.mjs'], active: true } },
+      {
+        type: 'lease',
+        lease: {
+          issuer_id: 'coordinator-1',
+          writer_id: 'writer-1',
+          scope: ['src/a.mjs'],
+          active: true,
+        },
+      },
       { type: 'mutation', mutation: { agent_id: 'challenger-1', path: 'src/a.mjs' } },
       { type: 'mutation', mutation: { agent_id: 'writer-1', path: 'src/a.mjs' } },
       { type: 'freeze', freeze: freezeA },
-      { type: 'review', review: {
-        reviewer_id: 'challenger-1',
-        seat_id: 'challenger-seat',
-        freeze_id: 'freeze-snap',
-        freeze_binding: deriveFreezeBinding(
-          baseRun,
-          freezeA,
-          ['src/a.mjs'],
-          canonicalMeasurementHash(measurement),
-        ),
-        verdict: 'PASS',
-        findings: [],
-      } },
+      {
+        type: 'review',
+        review: {
+          reviewer_id: 'challenger-1',
+          seat_id: 'challenger-seat',
+          freeze_id: 'freeze-snap',
+          freeze_binding: deriveFreezeBinding(
+            baseRun,
+            freezeA,
+            ['src/a.mjs'],
+            canonicalMeasurementHash(measurement),
+          ),
+          verdict: 'PASS',
+          findings: [],
+        },
+      },
     ];
     const snap = snapshotState(replayEvents(baseRun, events));
     assert.equal(snap.errors.length, 0);

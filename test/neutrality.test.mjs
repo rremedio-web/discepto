@@ -18,7 +18,7 @@ const FORBIDDEN = [
   'wordpress',
 ];
 
-const SCAN_DIRS = ['src', 'fixtures', 'playwright', 'docs', 'calibration'];
+const SCAN_DIRS = ['src', 'fixtures', 'playwright', 'docs', 'experiments', 'bin', 'examples'];
 
 function collectFiles(dir, acc = []) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {

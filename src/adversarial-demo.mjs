@@ -1,15 +1,19 @@
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
+import { sha256Canonical } from './canonical.mjs';
 import { replayEvents, snapshotState, PROTOCOL_VERSION } from './protocol.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 export function loadAdversarialFixtures(baseDir = root) {
   const scenario = JSON.parse(readFileSync(join(baseDir, 'fixtures/scenario.json'), 'utf8'));
-  const events = JSON.parse(readFileSync(join(baseDir, 'fixtures/adversarial-events.json'), 'utf8'));
-  const expected = JSON.parse(readFileSync(join(baseDir, 'fixtures/adversarial-expected.json'), 'utf8'));
+  const events = JSON.parse(
+    readFileSync(join(baseDir, 'fixtures/adversarial-events.json'), 'utf8'),
+  );
+  const expected = JSON.parse(
+    readFileSync(join(baseDir, 'fixtures/adversarial-expected.json'), 'utf8'),
+  );
   return { scenario, events, expected };
 }
 
@@ -18,9 +22,9 @@ function rejectionsMatch(snapshot, expected) {
   if (snapshot.rejections.length !== expected.rejections.length) return false;
   return snapshot.rejections.every(
     (item, index) =>
-      item.code === expected.rejections[index].code
-      && item.operation === expected.rejections[index].operation
-      && item.message === expected.rejections[index].message,
+      item.code === expected.rejections[index].code &&
+      item.operation === expected.rejections[index].operation &&
+      item.message === expected.rejections[index].message,
   );
 }
 
@@ -48,7 +52,7 @@ export function buildAdversarialReceipt(scenario, snapshot, expected) {
     expected_match: expectedMatch,
   };
 
-  const receipt_hash = createHash('sha256').update(JSON.stringify(body)).digest('hex');
+  const receipt_hash = sha256Canonical(body);
   return { ...body, receipt_hash };
 }
 

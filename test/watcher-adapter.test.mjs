@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { runAdversarialDemo } from '../src/adversarial-demo.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const adapterPath = join(root, 'src/watcher-adapter.mjs');
+const adapterPath = join(root, 'experiments/watcher/adapter.mjs');
 
 const EXPECTED_CLASSIFICATION = {
   classification: 'RECORDS_TRUST',
@@ -47,7 +47,7 @@ function rejection(code, operation, message = 'display-only prose must not matte
 describe('watcher adapter', () => {
   it('all 14 code/operation pairs adapt and classify exactly', async () => {
     const { REJECTION_CODE_OPERATIONS } = await import('../src/rejections.mjs');
-    const { adaptAndClassify } = await import('../src/watcher-adapter.mjs');
+    const { adaptAndClassify } = await import('../experiments/watcher/adapter.mjs');
     assert.equal(Object.keys(REJECTION_CODE_OPERATIONS).length, 14);
     for (const [code, operation] of ALL_REJECTION_PAIRS) {
       const result = adaptAndClassify(rejection(code, operation), CONTEXT);
@@ -69,7 +69,7 @@ describe('watcher adapter', () => {
   });
 
   it('unknown code and code/operation mismatch throw', async () => {
-    const { adaptRejection } = await import('../src/watcher-adapter.mjs');
+    const { adaptRejection } = await import('../experiments/watcher/adapter.mjs');
     assert.throws(
       () => adaptRejection(rejection('UNKNOWN_CODE', 'lease')),
       (err) => /unknown rejection code/i.test(err.message),
@@ -81,7 +81,7 @@ describe('watcher adapter', () => {
   });
 
   it('same code with distinct sequences yields distinct deterministic scenario IDs and evidence refs', async () => {
-    const { adaptRejection } = await import('../src/watcher-adapter.mjs');
+    const { adaptRejection } = await import('../experiments/watcher/adapter.mjs');
     const rejectionItem = rejection('MUTATION_CHALLENGER', 'mutation');
     const first = adaptRejection(rejectionItem, { ...CONTEXT, sequence: 0 });
     const second = adaptRejection(rejectionItem, { ...CONTEXT, sequence: 1 });
@@ -94,7 +94,7 @@ describe('watcher adapter', () => {
   });
 
   it('distinct run_id slugs that sanitize the same stay distinct via digest', async () => {
-    const { adaptRejection } = await import('../src/watcher-adapter.mjs');
+    const { adaptRejection } = await import('../experiments/watcher/adapter.mjs');
     const rejectionItem = rejection('MUTATION_CHALLENGER', 'mutation');
     const slash = adaptRejection(rejectionItem, { run_id: 'run/a', sequence: 0 });
     const hyphen = adaptRejection(rejectionItem, { run_id: 'run-a', sequence: 0 });
@@ -103,7 +103,7 @@ describe('watcher adapter', () => {
   });
 
   it('distinct Unicode-only run_ids stay distinct', async () => {
-    const { adaptRejection } = await import('../src/watcher-adapter.mjs');
+    const { adaptRejection } = await import('../experiments/watcher/adapter.mjs');
     const rejectionItem = rejection('MUTATION_CHALLENGER', 'mutation');
     const rocket = adaptRejection(rejectionItem, { run_id: '🚀', sequence: 0 });
     const star = adaptRejection(rejectionItem, { run_id: '★', sequence: 0 });
@@ -112,7 +112,7 @@ describe('watcher adapter', () => {
   });
 
   it('invalid context.run_id fails closed', async () => {
-    const { adaptRejection } = await import('../src/watcher-adapter.mjs');
+    const { adaptRejection } = await import('../experiments/watcher/adapter.mjs');
     const rejectionItem = rejection('MUTATION_CHALLENGER', 'mutation');
     for (const run_id of ['', null, 0, 1.5, false, {}]) {
       assert.throws(
@@ -124,7 +124,7 @@ describe('watcher adapter', () => {
   });
 
   it('same exact inputs produce byte-identical adapted output', async () => {
-    const { adaptAndClassify } = await import('../src/watcher-adapter.mjs');
+    const { adaptAndClassify } = await import('../experiments/watcher/adapter.mjs');
     const rejectionItem = rejection('MUTATION_CHALLENGER', 'mutation');
     const first = adaptAndClassify(rejectionItem, CONTEXT);
     const second = adaptAndClassify(rejectionItem, CONTEXT);
@@ -132,7 +132,7 @@ describe('watcher adapter', () => {
   });
 
   it('invalid context.sequence fails closed', async () => {
-    const { adaptRejection } = await import('../src/watcher-adapter.mjs');
+    const { adaptRejection } = await import('../experiments/watcher/adapter.mjs');
     const rejectionItem = rejection('MUTATION_CHALLENGER', 'mutation');
     for (const sequence of [-1, 1.5, '0', null, undefined]) {
       if (sequence === undefined) continue;
@@ -145,7 +145,7 @@ describe('watcher adapter', () => {
   });
 
   it('changing only message produces byte-identical adapted scenario/classification', async () => {
-    const { adaptAndClassify } = await import('../src/watcher-adapter.mjs');
+    const { adaptAndClassify } = await import('../experiments/watcher/adapter.mjs');
     const base = rejection('MUTATION_CHALLENGER', 'mutation', 'first prose');
     const mutated = rejection('MUTATION_CHALLENGER', 'mutation', 'completely different prose');
     const first = adaptAndClassify(base, CONTEXT);
@@ -164,10 +164,10 @@ describe('watcher adapter', () => {
 
 describe('watcher adversarial receipt', () => {
   it('receipt is deterministic across two CLI runs and matches expected fixture exactly', () => {
-    const first = spawnSync('node', [join(root, 'src/watcher-adversarial-demo.mjs')], {
+    const first = spawnSync('node', [join(root, 'experiments/watcher/adversarial-demo.mjs')], {
       encoding: 'utf8',
     });
-    const second = spawnSync('node', [join(root, 'src/watcher-adversarial-demo.mjs')], {
+    const second = spawnSync('node', [join(root, 'experiments/watcher/adversarial-demo.mjs')], {
       encoding: 'utf8',
     });
     assert.equal(first.status, 0, first.stderr);
@@ -182,7 +182,8 @@ describe('watcher adversarial receipt', () => {
   });
 
   it('has four catches with valid hashes', async () => {
-    const { runWatcherAdversarialDemo } = await import('../src/watcher-adversarial-demo.mjs');
+    const { runWatcherAdversarialDemo } =
+      await import('../experiments/watcher/adversarial-demo.mjs');
     const { receipt, allCatches } = runWatcherAdversarialDemo();
     assert.equal(receipt.observation_count, 4);
     assert.equal(receipt.observations.length, 4);
@@ -203,11 +204,11 @@ describe('watcher adversarial receipt', () => {
   });
 
   it('runWatcherAdversarialDemo matches spawned demo output', async () => {
-    const spawned = spawnSync('node', [join(root, 'src/watcher-adversarial-demo.mjs')], {
+    const spawned = spawnSync('node', [join(root, 'experiments/watcher/adversarial-demo.mjs')], {
       encoding: 'utf8',
     });
-    const { receipt } = await import('../src/watcher-adversarial-demo.mjs').then(
-      (mod) => mod.runWatcherAdversarialDemo(),
+    const { receipt } = await import('../experiments/watcher/adversarial-demo.mjs').then((mod) =>
+      mod.runWatcherAdversarialDemo(),
     );
     assert.equal(spawned.stdout, `${JSON.stringify(receipt, null, 2)}\n`);
   });

@@ -29,7 +29,7 @@ FORBIDDEN_SEGMENTS = {
 ALLOWED_EXTENSIONS = frozenset(
     {".md", ".json", ".mjs", ".yml", ".html", ".py", ".sh"}
 )
-ALLOWED_BASENAMES = frozenset({"LICENSE", ".gitignore"})
+ALLOWED_BASENAMES = frozenset({"LICENSE", ".gitignore", ".nvmrc", ".prettierignore"})
 ELF_MAGIC = b"\x7fELF"
 
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")

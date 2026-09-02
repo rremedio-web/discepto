@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import {
   validateRun,
   validateDiagnosis,
@@ -11,9 +10,10 @@ import {
   validateMutation,
   PHASES,
 } from './schema.mjs';
+import { compareUtf16, sha256Canonical } from './canonical.mjs';
 import { rejectionOperation } from './rejections.mjs';
 
-export const PROTOCOL_VERSION = 'discepto-protocol-3';
+export const PROTOCOL_VERSION = 'discepto-protocol-4';
 
 const PHASE_INDEX = Object.fromEntries(PHASES.map((phase, index) => [phase, index]));
 
@@ -21,8 +21,8 @@ function sortObservations(observations) {
   return observations
     .map((obs) => ({ key: obs.key, value: obs.value }))
     .sort((a, b) => {
-      const keyCmp = a.key.localeCompare(b.key);
-      return keyCmp !== 0 ? keyCmp : a.value.localeCompare(b.value);
+      const keyCmp = compareUtf16(a.key, b.key);
+      return keyCmp !== 0 ? keyCmp : compareUtf16(a.value, b.value);
     });
 }
 
@@ -38,7 +38,7 @@ export function canonicalMeasurementHash(measurement) {
       payload.artifact_identity.url = measurement.artifact_identity.url;
     }
   }
-  return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+  return sha256Canonical(payload);
 }
 
 export function deriveFreezeBinding(run, freeze, changedPaths, measurementHash) {
@@ -49,14 +49,14 @@ export function deriveFreezeBinding(run, freeze, changedPaths, measurementHash) 
     freeze_id: freeze.id,
     base_id: freeze.base_id,
     candidate_id: freeze.candidate_id,
-    changed_paths: [...changedPaths].sort(),
+    changed_paths: [...changedPaths].sort(compareUtf16),
     measurement_hash: measurementHash,
   };
-  return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+  return sha256Canonical(payload);
 }
 
 function deriveChangedPaths(mutations) {
-  return [...new Set(mutations.map((m) => m.path))].sort();
+  return [...new Set(mutations.map((m) => m.path))].sort(compareUtf16);
 }
 
 function scopeSubset(newScope, currentScope) {
@@ -203,7 +203,11 @@ export function applyLease(state, lease) {
       return reject(state, 'LEASE_ISSUER_MISMATCH', 'first lease must be coordinator-issued');
     }
     if (lease.writer_id !== state.writerId) {
-      return reject(state, 'LEASE_WRITER_MISMATCH', 'lease writer_id must match predesignated writer');
+      return reject(
+        state,
+        'LEASE_WRITER_MISMATCH',
+        'lease writer_id must match predesignated writer',
+      );
     }
     if (!lease.active) {
       return reject(state, 'LEASE_INITIAL_INACTIVE', 'first lease must be active');
@@ -220,7 +224,11 @@ export function applyLease(state, lease) {
     return reject(state, 'LEASE_ISSUER_MISMATCH', 'lease must be coordinator-issued');
   }
   if (lease.writer_id !== state.writerId) {
-    return reject(state, 'LEASE_WRITER_MISMATCH', 'lease writer_id must match predesignated writer');
+    return reject(
+      state,
+      'LEASE_WRITER_MISMATCH',
+      'lease writer_id must match predesignated writer',
+    );
   }
   if (!scopeSubset(lease.scope, state.lease.scope)) {
     return reject(state, 'LEASE_SCOPE_WIDENING', 'lease scope widening rejected');
@@ -241,7 +249,8 @@ export function applyMutation(state, mutation) {
   }
 
   const role = agentRole(state, agentId);
-  if (role === 'challenger') return reject(state, 'MUTATION_CHALLENGER', 'challenger mutation rejected');
+  if (role === 'challenger')
+    return reject(state, 'MUTATION_CHALLENGER', 'challenger mutation rejected');
   if (role !== 'writer') return fail(state, 'mutation agent_id not in run');
 
   if (!state.lease || !state.lease.active) {
@@ -300,7 +309,11 @@ function validateReviewAuthority(state, review) {
     return reject(state, 'REVIEW_SAME_SEAT', 'reviewer and writer seats must differ');
   }
   if (review.seat_id !== state.challengerSeatId) {
-    return reject(state, 'REVIEW_SEAT_MISMATCH', 'reviewer seat must match registered challenger seat');
+    return reject(
+      state,
+      'REVIEW_SEAT_MISMATCH',
+      'reviewer seat must match registered challenger seat',
+    );
   }
   const freeze = currentFreeze(state);
   if (!freeze) return reject(state, 'REVIEW_NO_CURRENT_FREEZE', 'review requires current freeze');
@@ -314,7 +327,8 @@ export function applyReview(state, review) {
   const result = validateReview(review);
   if (!result.ok) return fail(state, result.error);
   if (!requirePhase(state, 'REVIEW')) return false;
-  if (!state.currentFreezeId) return reject(state, 'REVIEW_NO_CURRENT_FREEZE', 'review requires current freeze');
+  if (!state.currentFreezeId)
+    return reject(state, 'REVIEW_NO_CURRENT_FREEZE', 'review requires current freeze');
   if (review.freeze_id !== state.currentFreezeId) {
     return reject(state, 'REVIEW_FREEZE_MISMATCH', 'review must reference current freeze');
   }

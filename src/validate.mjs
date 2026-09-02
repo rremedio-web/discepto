@@ -1,10 +1,6 @@
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 import { validateRun } from './schema.mjs';
 import { replayEvents, snapshotState } from './protocol.mjs';
 import { loadFixtures } from './replay.mjs';
-
-const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 let errors = 0;
 

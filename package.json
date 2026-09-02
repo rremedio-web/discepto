@@ -1,23 +1,42 @@
 {
-  "name": "discepto-worktree-experiment",
+  "name": "discepto",
   "version": "0.4.0",
-  "description": "Provider-neutral synthetic two-agent single-worktree experiment and replay kit",
+  "private": true,
+  "description": "Offline two-agent protocol replay kit for authority, evidence, and review rules",
   "type": "module",
   "engines": {
     "node": ">=22"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rremedio-web/discepto.git"
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "validate": "node src/validate.mjs",
     "demo": "node src/demo.mjs",
-    "replay": "node src/replay.mjs",
+    "replay": "node bin/discepto.mjs replay --scenario fixtures/scenario.json --events fixtures/events.json --expected fixtures/expected.json --pretty",
     "demo:adversarial": "node src/adversarial-demo.mjs",
-    "validate:watcher": "node calibration/watcher/validate.mjs",
-    "demo:watcher": "node calibration/watcher/demo.mjs",
-    "demo:watcher:adversarial": "node src/watcher-adversarial-demo.mjs"
+    "validate:watcher": "node experiments/watcher/validate.mjs",
+    "demo:watcher": "node experiments/watcher/demo.mjs",
+    "demo:watcher:adversarial": "node experiments/watcher/adversarial-demo.mjs",
+    "lint": "eslint .",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "coverage": "node --test --experimental-test-coverage --test-coverage-include=src/protocol.mjs --test-coverage-include=src/schema.mjs --test-coverage-include=src/canonical.mjs --test-coverage-lines=80 test/*.test.mjs",
+    "check": "npm run lint && npm run format:check && npm test && npm run validate && npm run validate:watcher"
   },
   "license": "Apache-2.0",
   "devDependencies": {
-    "@playwright/test": "1.62.1"
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.62.1",
+    "eslint": "10.9.1",
+    "globals": "17.12.0",
+    "prettier": "3.9.6"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "trailingComma": "all",
+    "printWidth": 100
   }
 }

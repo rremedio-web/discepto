@@ -13,6 +13,17 @@ export const ROLES = Object.freeze(['writer', 'challenger']);
 
 export const VERDICTS = Object.freeze(['PASS', 'CHANGES_NEEDED']);
 
+export const EVENT_TYPES = Object.freeze([
+  'diagnosis',
+  'dispute',
+  'measurement',
+  'lease',
+  'mutation',
+  'freeze',
+  'review',
+  'correction',
+]);
+
 const RUN_FIELDS = new Set(['id', 'worktree_id', 'coordinator_id', 'agents', 'phase']);
 const AGENT_FIELDS = new Set(['id', 'role', 'seat_id']);
 const DIAGNOSIS_FIELDS = new Set(['agent_id', 'read_only', 'findings']);
@@ -22,7 +33,14 @@ const OBSERVATION_FIELDS = new Set(['key', 'value']);
 const ARTIFACT_IDENTITY_FIELDS = new Set(['kind', 'url']);
 const ARTIFACT_IDENTITY_KINDS = Object.freeze(['file', 'local-server', 'staging', 'production']);
 const FREEZE_REQUEST_FIELDS = new Set(['id', 'base_id', 'candidate_id']);
-const REVIEW_FIELDS = new Set(['reviewer_id', 'seat_id', 'freeze_id', 'freeze_binding', 'verdict', 'findings']);
+const REVIEW_FIELDS = new Set([
+  'reviewer_id',
+  'seat_id',
+  'freeze_id',
+  'freeze_binding',
+  'verdict',
+  'findings',
+]);
 const CORRECTION_FIELDS = new Set(['supersedes', 'red_ref', 'green_ref', 'count']);
 const DISPUTE_FIELDS = new Set(['agent_id', 'claim', 'estimate']);
 const MUTATION_FIELDS = new Set(['agent_id', 'path']);
@@ -80,7 +98,10 @@ export function validateRun(run) {
     }
     const agentUnknown = unknownKeys(agent, AGENT_FIELDS);
     if (agentUnknown.length > 0) {
-      return { ok: false, error: `run.agents[${i}] has unknown fields: ${agentUnknown.join(', ')}` };
+      return {
+        ok: false,
+        error: `run.agents[${i}] has unknown fields: ${agentUnknown.join(', ')}`,
+      };
     }
     if (!isNonEmptyString(agent.id)) {
       return { ok: false, error: `run.agents[${i}].id is required` };
@@ -194,7 +215,10 @@ export function validateMeasurement(measurement) {
     }
     const obsUnknown = unknownKeys(obs, OBSERVATION_FIELDS);
     if (obsUnknown.length > 0) {
-      return { ok: false, error: `measurement.observations[${i}] has unknown fields: ${obsUnknown.join(', ')}` };
+      return {
+        ok: false,
+        error: `measurement.observations[${i}] has unknown fields: ${obsUnknown.join(', ')}`,
+      };
     }
     if (!isNonEmptyString(obs.key) || !isNonEmptyString(obs.value)) {
       return { ok: false, error: `measurement.observations[${i}] requires key and value` };
@@ -210,7 +234,10 @@ export function validateMeasurement(measurement) {
     }
     const identityUnknown = unknownKeys(identity, ARTIFACT_IDENTITY_FIELDS);
     if (identityUnknown.length > 0) {
-      return { ok: false, error: `measurement.artifact_identity has unknown fields: ${identityUnknown.join(', ')}` };
+      return {
+        ok: false,
+        error: `measurement.artifact_identity has unknown fields: ${identityUnknown.join(', ')}`,
+      };
     }
     if (!ARTIFACT_IDENTITY_KINDS.includes(identity.kind)) {
       return {
@@ -277,7 +304,10 @@ export function validateReview(review) {
     return { ok: false, error: 'review.freeze_binding is required' };
   }
   if (!isLowercaseSha256Hex(review.freeze_binding)) {
-    return { ok: false, error: 'review.freeze_binding must be a lowercase 64-character hex digest' };
+    return {
+      ok: false,
+      error: 'review.freeze_binding must be a lowercase 64-character hex digest',
+    };
   }
   if (!VERDICTS.includes(review.verdict)) {
     return { ok: false, error: `invalid verdict: ${review.verdict}` };
@@ -350,4 +380,59 @@ export function validatePhase(value) {
     return { ok: false, error: `invalid phase: ${value}` };
   }
   return { ok: true };
+}
+
+const EVENT_PAYLOAD_VALIDATORS = Object.freeze({
+  diagnosis: validateDiagnosis,
+  dispute: validateDispute,
+  measurement: validateMeasurement,
+  lease: validateLease,
+  mutation: validateMutation,
+  freeze: validateFreeze,
+  review: validateReview,
+  correction: validateCorrection,
+});
+
+export function validateEvent(event) {
+  if (typeof event !== 'object' || event === null || Array.isArray(event)) {
+    return { ok: false, error: 'event must be an object' };
+  }
+  if (typeof event.type !== 'string' || event.type.length === 0) {
+    return { ok: false, error: 'event requires type' };
+  }
+  const validator = EVENT_PAYLOAD_VALIDATORS[event.type];
+  if (!validator) {
+    return { ok: false, error: `unknown event type: ${event.type}` };
+  }
+  const extra = Object.keys(event).filter((key) => key !== 'type' && key !== event.type);
+  if (extra.length > 0) {
+    return { ok: false, error: `event has unknown fields: ${extra.join(', ')}` };
+  }
+  if (!(event.type in event)) {
+    return { ok: false, error: `event missing ${event.type} payload` };
+  }
+  return validator(event[event.type]);
+}
+
+export function validateEvents(events) {
+  if (!Array.isArray(events)) {
+    return { ok: false, error: 'events must be an array' };
+  }
+  for (let i = 0; i < events.length; i += 1) {
+    const result = validateEvent(events[i]);
+    if (!result.ok) {
+      return { ok: false, error: `events[${i}]: ${result.error}` };
+    }
+  }
+  return { ok: true };
+}
+
+export function validateScenario(scenario) {
+  if (typeof scenario !== 'object' || scenario === null || Array.isArray(scenario)) {
+    return { ok: false, error: 'scenario must be an object' };
+  }
+  if (!('run' in scenario)) {
+    return { ok: false, error: 'scenario.run is required' };
+  }
+  return validateRun(scenario.run);
 }

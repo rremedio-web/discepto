@@ -9,10 +9,7 @@ import {
   replayEvents,
   snapshotState,
 } from '../src/protocol.mjs';
-import {
-  loadAdversarialFixtures,
-  runAdversarialDemo,
-} from '../src/adversarial-demo.mjs';
+import { loadAdversarialFixtures, runAdversarialDemo } from '../src/adversarial-demo.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -81,13 +78,15 @@ describe('adversarial trace', () => {
 
   it('demo emits deterministic JSON receipt to stdout', () => {
     const first = spawnSync('node', [join(root, 'src/adversarial-demo.mjs')], { encoding: 'utf8' });
-    const second = spawnSync('node', [join(root, 'src/adversarial-demo.mjs')], { encoding: 'utf8' });
+    const second = spawnSync('node', [join(root, 'src/adversarial-demo.mjs')], {
+      encoding: 'utf8',
+    });
     assert.equal(first.status, 0, first.stderr);
     assert.equal(second.status, 0, second.stderr);
     assert.equal(first.stdout, second.stdout);
 
     const receipt = JSON.parse(first.stdout);
-    assert.equal(receipt.protocol_version, 'discepto-protocol-3');
+    assert.equal(receipt.protocol_version, 'discepto-protocol-4');
     assert.equal(receipt.fixture_id, 'adversarial-neutral-001');
     assert.equal(receipt.run_id, 'run-neutral-001');
     assert.equal(receipt.phase, 'FINAL');
@@ -107,7 +106,9 @@ describe('adversarial trace', () => {
   });
 
   it('runAdversarialDemo matches spawned demo output', () => {
-    const spawned = spawnSync('node', [join(root, 'src/adversarial-demo.mjs')], { encoding: 'utf8' });
+    const spawned = spawnSync('node', [join(root, 'src/adversarial-demo.mjs')], {
+      encoding: 'utf8',
+    });
     const { output } = runAdversarialDemo();
     assert.equal(spawned.stdout, `${JSON.stringify(output, null, 2)}\n`);
   });

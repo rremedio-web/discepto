@@ -3,10 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { classify } from './classifier.mjs';
 import { scoreClassifier } from './scorer.mjs';
-import {
-  validateScenario,
-  validateKeys,
-} from './schema.mjs';
+import { validateScenario, validateKeys } from './schema.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)));
 
@@ -67,28 +64,28 @@ function validateClassifierGate(scenarios, keys, label) {
     if (!expected) continue;
     const actual = classify(scenario);
     if (
-      actual.classification !== expected.classification
-      || actual.disposition !== expected.disposition
-      || actual.owner_decision !== expected.owner_decision
+      actual.classification !== expected.classification ||
+      actual.disposition !== expected.disposition ||
+      actual.owner_decision !== expected.owner_decision
     ) {
       report(`${label}: mismatch for ${scenario.id}`);
     }
   }
 }
 
-const trainScenarios = loadJson('fixtures/train-scenarios.json');
-const trainKeys = loadJson('fixtures/train-keys.json');
-const heldScenarios = loadJson('fixtures/held-out-scenarios.json');
-const heldKeys = loadJson('fixtures/held-out-keys.json');
+const ruleExamples = loadJson('fixtures/rule-examples.json');
+const ruleExampleKeys = loadJson('fixtures/rule-example-keys.json');
+const conformanceScenarios = loadJson('fixtures/conformance-scenarios.json');
+const conformanceKeys = loadJson('fixtures/conformance-keys.json');
 
-const trainIds = validateScenarioSet(trainScenarios, 'train');
-const heldIds = validateScenarioSet(heldScenarios, 'held-out');
+const ruleIds = validateScenarioSet(ruleExamples, 'rule-examples');
+const conformanceIds = validateScenarioSet(conformanceScenarios, 'conformance');
 
-validateKeyAlignment(trainIds, trainKeys, 'train');
-validateKeyAlignment(heldIds, heldKeys, 'held-out');
+validateKeyAlignment(ruleIds, ruleExampleKeys, 'rule-examples');
+validateKeyAlignment(conformanceIds, conformanceKeys, 'conformance');
 
-validateClassifierGate(trainScenarios, trainKeys, 'train');
-validateClassifierGate(heldScenarios, heldKeys, 'held-out');
+validateClassifierGate(ruleExamples, ruleExampleKeys, 'rule-examples');
+validateClassifierGate(conformanceScenarios, conformanceKeys, 'conformance');
 
 if (errors > 0) {
   process.exit(1);

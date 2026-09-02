@@ -1,10 +1,10 @@
-import { createHash } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
-import { runAdversarialDemo } from './adversarial-demo.mjs';
-import { adaptAndClassify, WATCHER_CALIBRATION_VERSION } from './watcher-adapter.mjs';
+import { sha256Canonical } from '../../src/canonical.mjs';
+import { runAdversarialDemo } from '../../src/adversarial-demo.mjs';
+import { adaptAndClassify, WATCHER_CALIBRATION_VERSION } from './adapter.mjs';
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
 export function buildWatcherAdversarialReceipt(adversarialOutput) {
   const { output } = adversarialOutput;
@@ -38,7 +38,7 @@ export function buildWatcherAdversarialReceipt(adversarialOutput) {
     observations,
   };
 
-  const receipt_hash = createHash('sha256').update(JSON.stringify(body)).digest('hex');
+  const receipt_hash = sha256Canonical(body);
   return { ...body, receipt_hash };
 }
 
@@ -47,9 +47,9 @@ export function runWatcherAdversarialDemo(baseDir = root) {
   const receipt = buildWatcherAdversarialReceipt(adversarial);
   const allCatches = receipt.observations.every(
     (observation) =>
-      observation.classification === 'RECORDS_TRUST'
-      && observation.disposition === 'HOLD'
-      && observation.owner_decision === 'yes',
+      observation.classification === 'RECORDS_TRUST' &&
+      observation.disposition === 'HOLD' &&
+      observation.owner_decision === 'yes',
   );
   return { adversarial, receipt, allCatches };
 }

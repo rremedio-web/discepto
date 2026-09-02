@@ -13,7 +13,7 @@ function parseLimitationsTable() {
     .split('\n')
     .filter((line) => line.startsWith('| `'))
     .map((line) => {
-      const match = line.match(/^\| `([A-Z_]+)` \| `([a-z]+)` \|/);
+      const match = line.match(/^\| `([A-Z_]+)`\s+\| `([a-z]+)`\s+\|/);
       if (!match) throw new Error(`unparsable limitations table row: ${line}`);
       return [match[1], match[2]];
     });
@@ -34,7 +34,10 @@ describe('rejection catalog', () => {
       assert.equal(row[1], operation, `operation mismatch in docs table: ${code}`);
     }
     for (const [docCode] of documented) {
-      assert.ok(REJECTION_CODE_OPERATIONS[docCode] !== undefined, `docs table code not in catalog: ${docCode}`);
+      assert.ok(
+        REJECTION_CODE_OPERATIONS[docCode] !== undefined,
+        `docs table code not in catalog: ${docCode}`,
+      );
     }
   });
 

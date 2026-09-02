@@ -10,9 +10,13 @@ import {
   validateCorrection,
   validateDispute,
   validateMutation,
+  validateEvent,
+  validateEvents,
+  validateScenario,
   PHASES,
   ROLES,
   VERDICTS,
+  EVENT_TYPES,
 } from '../src/schema.mjs';
 
 const baseRun = {
@@ -297,33 +301,79 @@ describe('schema validation', () => {
 
   it('exports frozen phase and role enums', () => {
     assert.deepEqual(PHASES, [
-      'DIAGNOSE', 'DISPUTE', 'MEASURE', 'IMPLEMENT', 'FREEZE', 'REVIEW', 'CORRECT', 'FINAL',
+      'DIAGNOSE',
+      'DISPUTE',
+      'MEASURE',
+      'IMPLEMENT',
+      'FREEZE',
+      'REVIEW',
+      'CORRECT',
+      'FINAL',
     ]);
     assert.deepEqual(ROLES, ['writer', 'challenger']);
     assert.deepEqual(VERDICTS, ['PASS', 'CHANGES_NEEDED']);
+    assert.deepEqual(EVENT_TYPES, [
+      'diagnosis',
+      'dispute',
+      'measurement',
+      'lease',
+      'mutation',
+      'freeze',
+      'review',
+      'correction',
+    ]);
   });
 
   it('validates complete structures', () => {
-    assert.equal(validateLease({
-      issuer_id: 'c',
-      writer_id: 'w',
-      scope: ['a.mjs'],
-      active: true,
-    }).ok, true);
-    assert.equal(validateMeasurement({
-      method: 'm',
-      observations: [{ key: 'k', value: 'v' }],
-      result: 'r',
-    }).ok, true);
-    assert.equal(validateReview({
-      reviewer_id: 'c',
-      seat_id: 'reviewer-seat',
-      freeze_id: 'f',
-      freeze_binding: '0000000000000000000000000000000000000000000000000000000000000000',
-      verdict: 'PASS',
-      findings: [],
-    }).ok, true);
+    assert.equal(
+      validateLease({
+        issuer_id: 'c',
+        writer_id: 'w',
+        scope: ['a.mjs'],
+        active: true,
+      }).ok,
+      true,
+    );
+    assert.equal(
+      validateMeasurement({
+        method: 'm',
+        observations: [{ key: 'k', value: 'v' }],
+        result: 'r',
+      }).ok,
+      true,
+    );
+    assert.equal(
+      validateReview({
+        reviewer_id: 'c',
+        seat_id: 'reviewer-seat',
+        freeze_id: 'f',
+        freeze_binding: '0000000000000000000000000000000000000000000000000000000000000000',
+        verdict: 'PASS',
+        findings: [],
+      }).ok,
+      true,
+    );
     assert.equal(validateDispute({ agent_id: 'a', claim: 'c', estimate: 'e' }).ok, true);
     assert.equal(validateMutation({ agent_id: 'w', path: 'a.mjs' }).ok, true);
+  });
+
+  it('validateScenario requires a valid run', () => {
+    assert.equal(validateScenario({ run: baseRun }).ok, true);
+    assert.equal(validateScenario(null).ok, false);
+    assert.equal(validateScenario({}).ok, false);
+  });
+
+  it('validateEvent and validateEvents reject unknown types and extra fields', () => {
+    const diagnosis = {
+      type: 'diagnosis',
+      diagnosis: { agent_id: 'writer-1', read_only: true, findings: ['a'] },
+    };
+    assert.equal(validateEvent(diagnosis).ok, true);
+    assert.equal(validateEvent({ type: 'sabotage', sabotage: {} }).ok, false);
+    assert.equal(validateEvent({ type: 'diagnosis' }).ok, false);
+    assert.equal(validateEvent({ ...diagnosis, extra: true }).ok, false);
+    assert.equal(validateEvents([diagnosis]).ok, true);
+    assert.equal(validateEvents({ type: 'diagnosis' }).ok, false);
+    assert.match(validateEvents([diagnosis, { type: 'nope' }]).error, /events\[1\]/);
   });
 });
